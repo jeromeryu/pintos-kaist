@@ -28,6 +28,7 @@ static intr_handler_func timer_interrupt;
 static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
+static bool compare_timer_tick(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 static struct list timer_list;
 
@@ -207,7 +208,7 @@ real_time_sleep (int64_t num, int32_t denom) {
 	}
 }
 
-bool compare_timer_tick(const struct list_elem *a, const struct list_elem *b, void *aux){
+static bool compare_timer_tick(const struct list_elem *a, const struct list_elem *b, void *aux){
 	struct thread *ta = list_entry(a, struct thread, elem);
 	struct thread *tb = list_entry(b, struct thread, elem);
 	return ta->sleep_tick < tb->sleep_tick;
