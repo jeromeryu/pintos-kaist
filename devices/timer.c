@@ -29,6 +29,8 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 
+static struct list timer_list;
+
 /* Sets up the 8254 Programmable Interval Timer (PIT) to
    interrupt PIT_FREQ times per second, and registers the
    corresponding interrupt. */
@@ -36,6 +38,9 @@ void
 timer_init (void) {
 	/* 8254 input frequency divided by TIMER_FREQ, rounded to
 	   nearest. */
+	list_init (&timer_list);
+
+
 	uint16_t count = (1193180 + TIMER_FREQ / 2) / TIMER_FREQ;
 
 	outb (0x43, 0x34);    /* CW: counter 0, LSB then MSB, mode 2, binary. */
@@ -90,11 +95,16 @@ timer_elapsed (int64_t then) {
 /* Suspends execution for approximately TICKS timer ticks. */
 void
 timer_sleep (int64_t ticks) {
-	int64_t start = timer_ticks ();
+	enum intr_level old_level = intr_disable ();
 
-	ASSERT (intr_get_level () == INTR_ON);
-	while (timer_elapsed (start) < ticks)
-		thread_yield ();
+	int64_t start = timer_ticks ();
+	struct thread *t = thread_current ();
+	t->sleep_tick = start + ticks;
+
+	thread_block();
+	list_insert_ordered(&timer_list, t, *compare_timer_tick, NULL);
+
+	intr_set_level (old_level);
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -125,6 +135,18 @@ timer_print_stats (void) {
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
+	struct list_elem *e;
+
+	for(e = list_begin(&timer_list); e!=list_end(&timer_list); e = list_next(e)){
+		struct thread *t = list_entry(e, struct thread, elem);
+		if(t->sleep_tick <= timer_ticks()){
+			thread_unblock(t);
+			e = list_remove(e);
+		} else {
+			break;
+		}
+	}
+
 	thread_tick ();
 }
 
@@ -183,4 +205,10 @@ real_time_sleep (int64_t num, int32_t denom) {
 		ASSERT (denom % 1000 == 0);
 		busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000));
 	}
+}
+
+bool compare_timer_tick(const struct list_elem *a, const struct list_elem *b, void *aux){
+	struct thread *ta = list_entry(a, struct thread, elem);
+	struct thread *tb = list_entry(b, struct thread, elem);
+	return ta->sleep_tick < tb->sleep_tick;
 }
