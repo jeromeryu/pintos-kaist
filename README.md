@@ -1,5 +1,4 @@
 [ADDED] pintos homework for CS330, Spring Semester 2021
-teammate : yeolia327
 
 Brand new pintos for Operating Systems and Lab (CS330), KAIST, by Youngjin Kwon.
 
