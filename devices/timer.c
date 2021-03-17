@@ -40,7 +40,7 @@ timer_init (void) {
 	/* 8254 input frequency divided by TIMER_FREQ, rounded to
 	   nearest. */
 	list_init (&timer_list);
-
+	printf("timer init");
 
 	uint16_t count = (1193180 + TIMER_FREQ / 2) / TIMER_FREQ;
 
@@ -101,10 +101,10 @@ timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks ();
 	struct thread *t = thread_current ();
 	t->sleep_tick = start + ticks;
-
+	// printf("add thread %s %d\n", t->name, t->tid);
+	list_insert_ordered(&timer_list, &(t->timer_elem), *compare_timer_tick, NULL);
+	
 	thread_block();
-	list_insert_ordered(&timer_list, t, *compare_timer_tick, NULL);
-
 	intr_set_level (old_level);
 }
 
@@ -136,15 +136,19 @@ timer_print_stats (void) {
 static void
 timer_interrupt (struct intr_frame *args UNUSED) {
 	ticks++;
-	struct list_elem *e;
+	struct list_elem *e1;
 
-	for(e = list_begin(&timer_list); e!=list_end(&timer_list); e = list_next(e)){
-		struct thread *t = list_entry(e, struct thread, elem);
-		if(t->sleep_tick <= timer_ticks()){
-			thread_unblock(t);
-			e = list_remove(e);
-		} else {
-			break;
+	if(!list_empty(&timer_list)){
+		e1 = list_begin(&timer_list);
+		while(e1!=list_end(&timer_list)){
+			struct thread *t = list_entry(e1, struct thread, timer_elem);
+			if(t->sleep_tick <= ticks){
+				// printf("unblock %s\n", t->name);
+				thread_unblock(t);
+				e1 = list_remove(e1);
+			} else {
+				break;
+			}
 		}
 	}
 
@@ -209,7 +213,7 @@ real_time_sleep (int64_t num, int32_t denom) {
 }
 
 static bool compare_timer_tick(const struct list_elem *a, const struct list_elem *b, void *aux){
-	struct thread *ta = list_entry(a, struct thread, elem);
-	struct thread *tb = list_entry(b, struct thread, elem);
+	struct thread *ta = list_entry(a, struct thread, timer_elem);
+	struct thread *tb = list_entry(b, struct thread, timer_elem);
 	return ta->sleep_tick < tb->sleep_tick;
 }
