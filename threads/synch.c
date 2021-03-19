@@ -69,9 +69,10 @@ sema_down (struct semaphore *sema) {
 	old_level = intr_disable ();
 	while (sema->value == 0) {
 		// list_push_back (&sema->waiters, &thread_current ()->elem);
+		thread_current()->lock_wait = lock;
 		list_insert_ordered(&sema->waiters, &(thread_current()->elem), *compare_thread_priority, NULL);
 		if (lock != NULL) {
-			if(lock_donate(lock)){
+			if(lock_donate_iter(lock)){
 				ready_list_sort();
 			}
 		}
@@ -118,6 +119,7 @@ sema_up (struct semaphore *sema) {
 
 	old_level = intr_disable ();
 	if (!list_empty (&sema->waiters)){
+		sema_wait_sort(sema);
 		thread_unblock (list_entry (list_pop_front (&sema->waiters),
 					struct thread, elem));
 	}
@@ -203,6 +205,7 @@ lock_acquire (struct lock *lock) {
 	sema_down (&lock->semaphore);
 	lock->holder = t;
 	lock->priority = t->priority;
+	t->lock_wait = NULL;
 	list_push_back(&t->lock,&lock->lock_elem);
 }
 
@@ -240,6 +243,12 @@ lock_release (struct lock *lock) {
 	t->priority = lock->priority;
 	lock->holder = NULL;
 	list_remove(&lock->lock_elem);
+	if(!list_empty(&t->lock)){
+		int priority = get_highest_lock_priority(t);
+		if (priority > t->priority){
+			t->priority = priority;
+		}
+	}
 	sema_up (&lock->semaphore);
 }
 
@@ -339,6 +348,8 @@ cond_broadcast (struct condition *cond, struct lock *lock) {
 		cond_signal (cond, lock);
 }
 
+/* Implement priority donation for one lock
+   return 1 when priority donation needed and done, 0 for no priority donation*/
 int lock_donate(struct lock * lock){
 	struct thread *t = lock->holder;
 	int priority = get_highest_lock_priority(t);
@@ -347,4 +358,28 @@ int lock_donate(struct lock * lock){
 		return 1;
 	}
 	return 0;
+}
+
+/* Implement nested priority donation*/
+int lock_donate_iter(struct lock * lock){
+	struct thread *t = lock->holder;
+	int count = 0;
+	while(lock_donate(lock)){
+		if(t->lock_wait != NULL){
+			lock = t->lock_wait;
+			t = lock->holder;
+		}else{
+			return count;
+		}
+		count++;
+	}
+	return count;
+}
+
+/* sort sema's waiting list according to thread's priority*/
+void sema_wait_sort(struct semaphore *sema){
+	struct list *wait_list = &sema->waiters;
+	if(!list_empty(wait_list)){
+		list_sort(wait_list, compare_thread_priority, NULL);
+	}
 }

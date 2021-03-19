@@ -317,10 +317,25 @@ thread_yield (void) {
 }
 
 /* Sets the current thread's priority to NEW_PRIORITY. */
+/* If current thread' priority has been donated, new_priority will be distributed
+   for all locks contained in current thread*/
 void
 thread_set_priority (int new_priority) {
+	struct thread *t = thread_current();
 	struct thread *next = list_entry (list_begin (&ready_list), struct thread, elem);
-	thread_current ()->priority = new_priority;
+	if (!list_empty(&t->lock)){
+		struct list *lock_list = &t->lock;
+		struct list_elem *e1, *e2;
+		e2 = list_end(lock_list);
+		e1 = list_begin(lock_list);
+		while (e1!=list_end(lock_list)){
+			struct lock *l = list_entry(e1,struct lock, lock_elem);
+			l->priority = new_priority;
+			e1 = list_next(e1);
+		}
+	}else{
+		t->priority = new_priority;
+	}
 	if (next->priority > thread_current()->priority)
 		thread_yield();
 }
@@ -421,6 +436,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
 	list_init(&t->lock);
+	t->lock_wait = NULL;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -664,7 +680,7 @@ reorder_lock_priority() {
 }
 */
 
-
+/*sort ready_list accoring to thread's priority*/
 void
 ready_list_sort(){
 	list_sort(&ready_list, compare_thread_priority, NULL);
