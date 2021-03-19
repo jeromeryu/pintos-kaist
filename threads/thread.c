@@ -62,7 +62,7 @@ static void init_thread (struct thread *, const char *name, int priority);
 static void do_schedule(int status);
 static void schedule (void);
 static tid_t allocate_tid (void);
-static bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
+
 
 /* Returns true if T appears to point to a valid thread. */
 #define is_thread(t) ((t) != NULL && (t)->magic == THREAD_MAGIC)
@@ -183,6 +183,7 @@ thread_create (const char *name, int priority,
 	struct thread *t;
 	tid_t tid;
 
+
 	ASSERT (function != NULL);
 
 	/* Allocate thread. */
@@ -193,6 +194,7 @@ thread_create (const char *name, int priority,
 	/* Initialize thread. */
 	init_thread (t, name, priority);
 	tid = t->tid = allocate_tid ();
+
 
 	/* Call the kernel_thread if it scheduled.
 	 * Note) rdi is 1st argument, and rsi is 2nd argument. */
@@ -245,6 +247,7 @@ thread_unblock (struct thread *t) {
 	// list_push_back (&ready_list, &t->elem);
 	list_insert_ordered(&ready_list, &t->elem, *compare_thread_priority, NULL);
 	t->status = THREAD_READY;
+	reorder_lock_priority();
 	intr_set_level (old_level);
 }
 
@@ -417,6 +420,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+	list_init(&t->lock);
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -550,7 +554,7 @@ static void
 schedule (void) {
 	struct thread *curr = running_thread ();
 	struct thread *next = next_thread_to_run ();
-
+	
 	ASSERT (intr_get_level () == INTR_OFF);
 	ASSERT (curr->status != THREAD_RUNNING);
 	ASSERT (is_thread (next));
@@ -589,7 +593,6 @@ static tid_t
 allocate_tid (void) {
 	static tid_t next_tid = 1;
 	tid_t tid;
-
 	lock_acquire (&tid_lock);
 	tid = next_tid++;
 	lock_release (&tid_lock);
@@ -597,8 +600,64 @@ allocate_tid (void) {
 	return tid;
 }
 
-static bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux){
+bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux){
 	struct thread *ta = list_entry(a, struct thread, elem);
 	struct thread *tb = list_entry(b, struct thread, elem);
 	return ta->priority > tb->priority;
+}
+
+/* Among the thread from lock's waiters, get highest priority
+   if no waiters, return -1 */
+int
+get_lock_priority(struct lock *lock) {
+	if(!list_empty(&lock->semaphore.waiters)){
+		struct thread *t;
+		t = list_entry (list_begin (&lock->semaphore.waiters), struct thread, elem);
+		return t->priority;
+	}
+	return -1;
+}
+
+/* Among the locks belonging to thread *t, get the highest priority */
+int
+get_highest_lock_priority(struct thread *t) {
+	struct list_elem *e1;
+	struct lock *lock;
+	int highest_priority = -1;
+	if(!list_empty(&t->lock)){
+		e1 = list_begin(&t->lock);
+		while(e1!=list_end(&t->lock)){
+			lock = list_entry(e1, struct lock, lock_elem);
+			int val = get_lock_priority(lock);
+			if (val > highest_priority) {
+				highest_priority = val;
+			}
+			e1 = list_next(e1);
+		}
+	}
+	return highest_priority;
+}
+
+void
+reorder_lock_priority() {
+	struct list_elem *e1;
+	struct thread *t;
+
+	bool is_modified = false;
+
+	if(!list_empty(&ready_list)){
+		e1 = list_begin(&ready_list);
+		while(e1!=list_end(&ready_list)){
+			struct thread *t = list_entry(e1, struct thread, elem);
+			int val = get_highest_lock_priority(t);
+			if (val > t->priority) {
+				t->priority = val;
+				is_modified = true;
+			}
+			e1 = list_next(e1);
+		}
+	}
+	if(is_modified){
+		list_sort(&ready_list, compare_thread_priority, NULL);
+	}
 }

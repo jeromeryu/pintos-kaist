@@ -40,7 +40,6 @@ timer_init (void) {
 	/* 8254 input frequency divided by TIMER_FREQ, rounded to
 	   nearest. */
 	list_init (&timer_list);
-	printf("timer init");
 
 	uint16_t count = (1193180 + TIMER_FREQ / 2) / TIMER_FREQ;
 

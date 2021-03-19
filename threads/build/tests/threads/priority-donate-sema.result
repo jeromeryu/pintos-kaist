@@ -1,13 +1,2 @@
 FAIL
-Kernel panic in run: PANIC at ../../threads/interrupt.c:361 in intr_handler(): Unexpected interrupt
-Call stack: 0x8004213222 0x80042087b3 0x8004208b65 0x80042078c7 0x800420da11 0x80042165e8 0x800421645d 0x80042067f3 0x800420613d
-Translation of call stack:
-0x0000008004213222: debug_panic (lib/kernel/debug.c:32)
-0x00000080042087b3: intr_handler (threads/interrupt.c:365)
-0x0000008004208b65: intr_entry (threads/intr-stubs.o:?)
-0x00000080042078c7: intr_set_level (threads/interrupt.c:131 (discriminator 1))
-0x000000800420da11: vga_putc (devices/vga.c:92)
-0x00000080042165e8: putchar_have_lock (lib/kernel/console.c:177)
-0x000000800421645d: puts (lib/kernel/console.c:136)
-0x00000080042067f3: power_off (threads/init.c:348)
-0x000000800420613d: main (threads/init.c:127)
+Run didn't start up properly: no "Pintos booting" message

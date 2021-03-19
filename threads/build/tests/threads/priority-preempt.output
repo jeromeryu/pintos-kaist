@@ -1,0 +1,31 @@
+Kernel command line: -q run priority-preempt
+init thread init lock list of main
+lock 0x8004000f58 acquired by main 
+lock release by main
+lock 0x8004000e68 acquired by main 
+0 ~ 9fc00 1
+lock 0x8004000d88 acquired by main 
+lock release by main
+lock 0x8004000ca8 acquired by main 
+lock release by main
+lock 0x8004000bc8 acquired by main 
+lock release by main
+lock 0x8004000ae8 acquired by main 
+lock release by main
+lock 0x8004000a08 acquired by main 
+lock release by main
+lock 0x8004000928 acquired by main 
+lock release by main
+lock 0x8004000848 acquired by main 
+lock release by main
+lock 0x8004000768 acquired by main 
+lock release by main
+lock 0x8004000688 acquired by main 
+lock release by main
+lock 0x80040005a8 acquired by main 
+lock release by main
+lock 0x80040004c8 acquired by main 
+lock release by main
+lock 0x80040003e8 acquired by main 
+lock release by main
+l
