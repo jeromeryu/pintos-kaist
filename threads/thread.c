@@ -62,7 +62,6 @@ static void init_thread (struct thread *, const char *name, int priority);
 static void do_schedule(int status);
 static void schedule (void);
 static tid_t allocate_tid (void);
-static bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 
 /* Returns true if T appears to point to a valid thread. */
 #define is_thread(t) ((t) != NULL && (t)->magic == THREAD_MAGIC)
@@ -207,6 +206,9 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
+	if(t->priority > thread_current()->priority){
+		thread_yield();
+	}
 
 	return tid;
 }
@@ -315,7 +317,10 @@ thread_yield (void) {
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority) {
+	struct thread *next = list_entry (list_begin (&ready_list), struct thread, elem);
 	thread_current ()->priority = new_priority;
+	if (next->priority > thread_current()->priority)
+		thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -413,6 +418,8 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->tf.rsp = (uint64_t) t + PGSIZE - sizeof (void *);
 	t->priority = priority;
 	t->magic = THREAD_MAGIC;
+	list_init(&(t->lock_list));
+	t->original_priority = priority;
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -593,7 +600,7 @@ allocate_tid (void) {
 	return tid;
 }
 
-static bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux){
+bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux){
 	struct thread *ta = list_entry(a, struct thread, elem);
 	struct thread *tb = list_entry(b, struct thread, elem);
 	return ta->priority > tb->priority;

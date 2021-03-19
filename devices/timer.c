@@ -40,7 +40,6 @@ timer_init (void) {
 	/* 8254 input frequency divided by TIMER_FREQ, rounded to
 	   nearest. */
 	list_init (&timer_list);
-	printf("timer init");
 
 	uint16_t count = (1193180 + TIMER_FREQ / 2) / TIMER_FREQ;
 
@@ -101,7 +100,6 @@ timer_sleep (int64_t ticks) {
 	int64_t start = timer_ticks ();
 	struct thread *t = thread_current ();
 	t->sleep_tick = start + ticks;
-	// printf("add thread %s %d\n", t->name, t->tid);
 	list_insert_ordered(&timer_list, &(t->timer_elem), *compare_timer_tick, NULL);
 	
 	thread_block();

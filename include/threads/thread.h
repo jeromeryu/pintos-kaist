@@ -97,6 +97,9 @@ struct thread {
 	struct list_elem elem;              /* List element. */
 	struct list_elem timer_elem;
 
+	struct list lock_list;
+	int original_priority;
+
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
 	uint64_t *pml4;                     /* Page map level 4 */
@@ -144,5 +147,8 @@ int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
+
+bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
+
 
 #endif /* threads/thread.h */
