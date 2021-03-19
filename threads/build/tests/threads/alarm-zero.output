@@ -1,31 +1,18 @@
 Kernel command line: -q run alarm-zero
-init thread init lock list of main
-lock 0x8004000f58 acquired by main 
-lock release by main
-lock 0x8004000e68 acquired by main 
 0 ~ 9fc00 1
-lock 0x8004000d88 acquired by main 
-lock release by main
-lock 0x8004000ca8 acquired by main 
-lock release by main
-lock 0x8004000bc8 acquired by main 
-lock release by main
-lock 0x8004000ae8 acquired by main 
-lock release by main
-lock 0x8004000a08 acquired by main 
-lock release by main
-lock 0x8004000928 acquired by main 
-lock release by main
-lock 0x8004000848 acquired by main 
-lock release by main
-lock 0x8004000768 acquired by main 
-lock release by main
-lock 0x8004000688 acquired by main 
-lock release by main
-lock 0x80040005a8 acquired by main 
-lock release by main
-lock 0x80040004c8 acquired by main 
-lock release by main
-lock 0x80040003e8 acquired by main 
-lock release by main
-l
+100000 ~ 13e0000 1
+Pintos booting with: 
+	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
+	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+Calibrating timer...  261,734,400 loops/s.
+Boot complete.
+Executing 'alarm-zero':
+(alarm-zero) begin
+(alarm-zero) PASS
+(alarm-zero) end
+Execution of 'alarm-zero' complete.
+Timer: 25 ticks
+Thread: 1 idle ticks, 24 kernel ticks, 0 user ticks
+Console: 425 characters output
+Keyboard: 0 keys pressed
+Powering off...

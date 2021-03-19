@@ -146,6 +146,8 @@ int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
 bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
-void reorder_lock_priority();
+// void reorder_lock_priority();
+int get_highest_lock_priority(struct thread *t);
+void ready_list_sort(void);
 
 #endif /* threads/thread.h */

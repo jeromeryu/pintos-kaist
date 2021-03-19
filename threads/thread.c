@@ -247,7 +247,7 @@ thread_unblock (struct thread *t) {
 	// list_push_back (&ready_list, &t->elem);
 	list_insert_ordered(&ready_list, &t->elem, *compare_thread_priority, NULL);
 	t->status = THREAD_READY;
-	reorder_lock_priority();
+	ready_list_sort();
 	intr_set_level (old_level);
 }
 
@@ -638,6 +638,7 @@ get_highest_lock_priority(struct thread *t) {
 	return highest_priority;
 }
 
+/*
 void
 reorder_lock_priority() {
 	struct list_elem *e1;
@@ -660,4 +661,11 @@ reorder_lock_priority() {
 	if(is_modified){
 		list_sort(&ready_list, compare_thread_priority, NULL);
 	}
+}
+*/
+
+
+void
+ready_list_sort(){
+	list_sort(&ready_list, compare_thread_priority, NULL);
 }
