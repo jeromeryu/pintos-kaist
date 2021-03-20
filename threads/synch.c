@@ -238,7 +238,15 @@ lock_release (struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	list_remove(&lock->lock_elem);
-	lock->holder->priority = lock->holder->original_priority;
+
+	int val = get_highest_lock_priority(lock->holder);
+	// if(val > lock->holder->original_priority){
+	// 	lock->holder->priority = val;
+		// lock->holder->priority = lock->holder->original_priority;
+
+	// } else {
+		lock->holder->priority = lock->holder->original_priority;
+	// }
 	lock->holder = NULL;
 	sema_up (&lock->semaphore);
 }

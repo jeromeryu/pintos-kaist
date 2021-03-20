@@ -605,3 +605,33 @@ bool compare_thread_priority(const struct list_elem *a, const struct list_elem *
 	struct thread *tb = list_entry(b, struct thread, elem);
 	return ta->priority > tb->priority;
 }
+
+int
+get_lock_priority(struct lock *lock) {
+	if(!list_empty(&lock->semaphore.waiters)){
+		struct thread *t;
+		t = list_entry (list_begin (&lock->semaphore.waiters), struct thread, elem);
+		return t->priority;
+	}
+	return -1;
+}
+
+/* Among the locks belonging to thread *t, get the highest priority */
+int
+get_highest_lock_priority(struct thread *t) {
+	struct list_elem *e1;
+	struct lock *lock;
+	int highest_priority = -1;
+	if(!list_empty(&t->lock_list)){
+		e1 = list_begin(&t->lock_list);
+		while(e1!=list_end(&t->lock_list)){
+			lock = list_entry(e1, struct lock, lock_elem);
+			int val = get_lock_priority(lock);
+			if (val > highest_priority) {
+				highest_priority = val;
+			}
+			e1 = list_next(e1);
+		}
+	}
+	return highest_priority;
+}
