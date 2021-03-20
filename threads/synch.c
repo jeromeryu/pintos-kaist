@@ -308,7 +308,10 @@ cond_wait (struct condition *cond, struct lock *lock) {
 	ASSERT (lock_held_by_current_thread (lock));
 
 	sema_init (&waiter.semaphore, 0);
-	list_push_back (&cond->waiters, &waiter.elem);
+	
+	waiter.semaphore.priority = thread_current()->priority;
+	list_insert_ordered(&cond->waiters, &waiter.elem, *compare_sema_priority, NULL);
+	// list_push_back (&cond->waiters, &waiter.elem);
 	lock_release (lock);
 	sema_down (&waiter.semaphore);
 	lock_acquire (lock);
@@ -382,4 +385,10 @@ void sema_wait_sort(struct semaphore *sema){
 	if(!list_empty(wait_list)){
 		list_sort(wait_list, compare_thread_priority, NULL);
 	}
+}
+
+bool compare_sema_priority(const struct list_elem *a, const struct list_elem *b, void *aux){
+	struct semaphore_elem *sa = list_entry(a, struct semaphore_elem, elem);
+	struct semaphore_elem *sb = list_entry(b, struct semaphore_elem, elem);
+	return sa->semaphore.priority > sb->semaphore.priority;
 }
