@@ -27,6 +27,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static struct list all_list;
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -47,12 +48,15 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
+#define TIMER_FREQ 100
+
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+int load_avg;
 
 static void kernel_thread (thread_func *, void *aux);
 
@@ -109,7 +113,9 @@ thread_init (void) {
 	/* Init the globla thread context */
 	lock_init (&tid_lock);
 	list_init (&ready_list);
+	list_init (&all_list);
 	list_init (&destruction_req);
+	load_avg = 0;
 
 	/* Set up a thread structure for the running thread. */
 	initial_thread = running_thread ();
@@ -150,9 +156,83 @@ thread_tick (void) {
 	else
 		kernel_ticks++;
 
-	/* Enforce preemption. */
-	if (++thread_ticks >= TIME_SLICE)
-		intr_yield_on_return ();
+	if(thread_mlfqs){
+		if(t != idle_thread){
+			t->recent_cpu = float_plus_int(t->recent_cpu, 1);
+
+		}
+		if(timer_ticks() % TIMER_FREQ == 0) {
+			int ready_threads = get_ready_threads_num();
+			// int ready_threads = list_size(&ready_list);
+			// if(t != idle_thread){
+			// 	ready_threads += 1;
+			// }
+			load_avg = (59 * load_avg) / 60 + int2real(ready_threads) / 60;
+			if(!list_empty(&all_list)){
+				struct list_elem *e;
+				for(e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)){
+					struct thread *ta = list_entry(e, struct thread, all_elem);
+					int val = 2 * load_avg;
+					ta->recent_cpu = 
+						float_plus_int(float_mult_float(float_div_float(val, float_plus_int(val, 1)), ta->recent_cpu), ta->nice);
+					// printf("%d\n", ta->recent_cpu);
+				}
+			}
+
+		}
+
+		if(timer_ticks() % TIME_SLICE == 0){
+			calculate_priority();	
+			intr_yield_on_return ();
+		}
+	} else {
+		/* Enforce preemption. */
+		if (++thread_ticks >= TIME_SLICE)
+			intr_yield_on_return ();
+	}
+}
+
+int get_ready_threads_num(){
+	// int count = 0;
+	// if(thread_current() != idle_thread){
+	// 	count += 1;
+	// }
+	// struct list_elem *e;
+	// if(!list_empty(&ready_list)){
+	// 	for(e = list_begin(&ready_list); e!= list_end(&ready_list); e = list_next(e)){
+	// 		struct thread *t = list_entry(e, struct thread, elem);
+	// 		if(t != idle_thread){
+	// 			count += 1;
+	// 		}
+	// 	}
+	// }
+	// return count;
+
+	int count = (int)list_size(&ready_list);
+	if(thread_current() != idle_thread){
+		count += 1;
+	}
+	return count;
+}
+
+void calculate_priority(){
+	enum intr_level old_level;
+	old_level = intr_disable ();  
+	
+	if(!list_empty(&all_list)){
+		struct list_elem *e;
+		for(e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e)){
+			struct thread *ta = list_entry(e, struct thread, all_elem);
+			if(ta!=NULL){
+				int pri = PRI_MAX - float2intround(ta->recent_cpu / 4) - ta->nice * 2;
+				ta->priority = check_pri(pri);
+			}
+		}
+
+		list_sort(&ready_list, compare_thread_priority, NULL);
+	}
+
+	intr_set_level(old_level);
 }
 
 /* Prints thread statistics. */
@@ -348,29 +428,41 @@ thread_get_priority (void) {
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) {
-	/* TODO: Your implementation goes here */
+thread_set_nice (int nice) {
+	struct thread *t = thread_current();
+	t->nice = nice;
+	// calculate_priority();
+
+	int pri = PRI_MAX - float2intround(t->recent_cpu / 4) - t->nice * 2;
+	t->priority = check_pri(pri);
+
+	if(!list_empty(&ready_list)){
+		// list_sort(&ready_list, compare_thread_priority, NULL);
+		struct thread *tmax  = list_entry(list_begin(&ready_list), struct thread, elem);
+		if(t->priority < tmax->priority){
+			thread_yield();
+		}
+	}
+
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) {
 	/* TODO: Your implementation goes here */
-	return 0;
+	return thread_current()->nice;
 }
 
 /* Returns 100 times the system load average. */
 int
 thread_get_load_avg (void) {
-	/* TODO: Your implementation goes here */
-	return 0;
+	return float2intround(load_avg * 100);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) {
-	/* TODO: Your implementation goes here */
-	return 0;
+	return float2intround(thread_current()->recent_cpu * 100);
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -437,6 +529,17 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->magic = THREAD_MAGIC;
 	list_init(&t->lock);
 	t->lock_wait = NULL;
+	
+	//advanced scheduling
+	if(thread_mlfqs){
+		t->nice = 0;
+		t->recent_cpu = 0; 
+		int pri = PRI_MAX - float2intround(t->recent_cpu / 4) - t->nice * 2;
+		t->priority = check_pri(pri);
+
+		list_push_back(&all_list, &t->all_elem);
+	}
+
 }
 
 /* Chooses and returns the next thread to be scheduled.  Should
@@ -560,6 +663,9 @@ do_schedule(int status) {
 	while (!list_empty (&destruction_req)) {
 		struct thread *victim =
 			list_entry (list_pop_front (&destruction_req), struct thread, elem);
+		if(thread_mlfqs){
+			list_remove(&victim->all_elem);
+		}
 		palloc_free_page(victim);
 	}
 	thread_current ()->status = status;
@@ -684,4 +790,14 @@ reorder_lock_priority() {
 void
 ready_list_sort(){
 	list_sort(&ready_list, compare_thread_priority, NULL);
+}
+
+int check_pri(int pri){
+	if(pri > PRI_MAX) {
+		return PRI_MAX;
+	} else if(pri < PRI_MIN) {
+		return PRI_MIN;
+	} else {
+		return pri;
+	}
 }

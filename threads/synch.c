@@ -69,12 +69,16 @@ sema_down (struct semaphore *sema) {
 	old_level = intr_disable ();
 	while (sema->value == 0) {
 		// list_push_back (&sema->waiters, &thread_current ()->elem);
-		thread_current()->lock_wait = lock;
-		list_insert_ordered(&sema->waiters, &(thread_current()->elem), *compare_thread_priority, NULL);
-		if (lock != NULL) {
-			if(lock_donate_iter(lock)){
-				ready_list_sort();
+		if(!thread_mlfqs){
+			thread_current()->lock_wait = lock;
+			list_insert_ordered(&sema->waiters, &(thread_current()->elem), *compare_thread_priority, NULL);
+			if (lock != NULL) {
+				if(lock_donate_iter(lock)){
+					ready_list_sort();
+				}
 			}
+		} else {
+			list_push_back (&sema->waiters, &thread_current ()->elem);
 		}
 		thread_block ();
 	}
