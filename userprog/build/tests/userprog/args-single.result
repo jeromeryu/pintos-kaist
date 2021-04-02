@@ -1,7 +1,2 @@
 FAIL
-Kernel panic in run: PANIC at ../../userprog/process.c:73 in initd(): Fail to launch initd
-Call stack: 0x800421843d 0x800421baff 0x80042079d0
-Translation of call stack:
-0x000000800421843d: debug_panic (lib/kernel/debug.c:32)
-0x000000800421baff: initd (userprog/process.c:74)
-0x00000080042079d0: kernel_thread (threads/thread.c:521)
+Run didn't produce any output

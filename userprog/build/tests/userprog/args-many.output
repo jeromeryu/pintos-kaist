@@ -4,7 +4,7 @@ Kernel command line: -q -f put args-many run 'args-many a b c d e f g h i j k l 
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  104,755,200 loops/s.
+Calibrating timer...  52,531,200 loops/s.
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -12,23 +12,13 @@ Formatting file system...done.
 Boot complete.
 Putting 'args-many' into the file system...
 Executing 'args-many a b c d e f g h i j k l m n o p q r s t u v':
-no thread test
-process_create_initd args-many a b c d e f g h i j k l m n o p q r s t u v
-process_wait 3
-initd
-asf
-load
-load: args-many a b c d e f g h i j k l m n o p q r s t u v: open failed
-Kernel PANIC at ../../userprog/process.c:73 in initd(): Fail to launch initd
-
-Call stack: 0x800421843d 0x800421baff 0x80042079d0.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 115 ticks
-Thread: 49 idle ticks, 65 kernel ticks, 1 user ticks
+Execution of 'args-many a b c d e f g h i j k l m n o p q r s t u v' complete.
+Timer: 92 ticks
+Thread: 47 idle ticks, 45 kernel ticks, 0 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 51 reads, 232 writes
+hd0:1: 34 reads, 232 writes
 hd1:0: 102 reads, 0 writes
-Console: 1320 characters output
-Key
+Console: 920 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

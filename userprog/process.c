@@ -50,11 +50,9 @@ process_create_initd (const char *file_name) {
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
 
-	printf("process_create_initd %s\n", file_name);
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
 	if (tid == TID_ERROR){
-		printf("error\n");
 		palloc_free_page (fn_copy);
 	}
 	return tid;
@@ -66,7 +64,6 @@ initd (void *f_name) {
 #ifdef VM
 	supplemental_page_table_init (&thread_current ()->spt);
 #endif
-	printf("initd\n");
 	process_init ();
 
 	if (process_exec (f_name) < 0)
@@ -167,22 +164,6 @@ int
 process_exec (void *f_name) {
 	char *file_name = f_name;
 	bool success;
-	printf("asf\n");
-	// char *p = (char *)(USER_STACK+sizeof(*(void (*) ())USER_STACK));
-	// char *c;
-	// char **lst;
-
-	// printf("asdf\n");
-	// char *cur;
-	// char *next;
-	// cur = strtok_r(f_name, ' ', &next);
-	// while(cur) { 
-	// 	printf("ret_ptr = [%s]\n", cur); 
-	// 	cur = strtok_r(NULL, ' ', &next); 
-	// }
-	// printf("asdf\n");
-
-
 
 	/* We cannot use the intr_frame in the thread structure.
 	 * This is because when current thread rescheduled,
@@ -200,6 +181,7 @@ process_exec (void *f_name) {
 
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
+
 	if (!success)
 		return -1;
 
@@ -223,7 +205,6 @@ process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	printf("process_wait %d\n", child_tid);
 	while(true){
 
 	}
@@ -346,7 +327,6 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
  * Returns true if successful, false otherwise. */
 static bool
 load (const char *file_name, struct intr_frame *if_) {
-	printf("load\n");
 	struct thread *t = thread_current ();
 	struct ELF ehdr;
 	struct file *file = NULL;
@@ -354,11 +334,17 @@ load (const char *file_name, struct intr_frame *if_) {
 	bool success = false;
 	int i;
 
+	char full_file_name[100];
+	strlcpy(full_file_name, file_name, strlen(file_name)+1);
+
 	/* Allocate and activate page directory. */
 	t->pml4 = pml4_create ();
 	if (t->pml4 == NULL)
 		goto done;
 	process_activate (thread_current ());
+
+	char *next;
+	file_name = strtok_r(file_name, " ", &next);
 
 	/* Open executable file. */
 	file = filesys_open (file_name);
@@ -366,6 +352,7 @@ load (const char *file_name, struct intr_frame *if_) {
 		printf ("load: %s: open failed\n", file_name);
 		goto done;
 	}
+
 
 	/* Read and verify executable header. */
 	if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -436,12 +423,54 @@ load (const char *file_name, struct intr_frame *if_) {
 	if (!setup_stack (if_))
 		goto done;
 
+
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
 
 	/* TODO: Your code goes here.
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
 
+	char *arr[100];
+	uintptr_t ptrs[100];
+	int idx = 0;
+	char *ret;
+	ret = strtok_r(full_file_name, " ", &next);
+	while(ret){
+		arr[idx] = ret;
+		ret = strtok_r(NULL, " ", &next);
+		idx ++;
+	}
+	if_->R.rdi = idx;
+
+	int k=0;
+	for(int j=idx; j>0; j--){
+		int len = strlen(arr[j-1])+1;
+		// printf("len %d\n", len);
+		if_->rsp -= len;
+		strlcpy((char *)if_->rsp, arr[j-1], len); 
+		ptrs[k] = if_->rsp;
+		k++;
+	}
+
+	while(if_->rsp % 8 != 0){
+		*(char *)(if_->rsp) = '\0';
+		if_->rsp -= 1;
+	}
+
+	if_->rsp -= 8;
+	*(char *)(if_->rsp) = 0;
+	
+	for(int j=0; j<k; j++){
+		if_->rsp-=8;
+		*(char*)(if_->rsp) = ptrs[j];
+	}
+	if_->R.rsi = if_->rsp;
+
+	if_->rsp -= 8;
+	*(char *)if_->rsp = 0; //fake return addr
+
+	if_->rsp -= 8; // not sure
+		
 	success = true;
 
 done:
