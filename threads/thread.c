@@ -263,7 +263,6 @@ thread_create (const char *name, int priority,
 	struct thread *t;
 	tid_t tid;
 
-
 	ASSERT (function != NULL);
 
 	/* Allocate thread. */
@@ -289,8 +288,12 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
-	if (t->priority > thread_current()->priority)
+	// printf("%d %s %d %s\n", t->priority, t->name, thread_current()->priority, thread_current()->name);
+	if (t->priority > thread_current()->priority){
+		// printf("yield\n");
 		thread_yield();
+	}
+
 	return tid;
 }
 

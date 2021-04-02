@@ -50,10 +50,13 @@ process_create_initd (const char *file_name) {
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
 
+	printf("process_create_initd %s\n", file_name);
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
-	if (tid == TID_ERROR)
+	if (tid == TID_ERROR){
+		printf("error\n");
 		palloc_free_page (fn_copy);
+	}
 	return tid;
 }
 
@@ -63,7 +66,7 @@ initd (void *f_name) {
 #ifdef VM
 	supplemental_page_table_init (&thread_current ()->spt);
 #endif
-
+	printf("initd\n");
 	process_init ();
 
 	if (process_exec (f_name) < 0)
@@ -164,6 +167,22 @@ int
 process_exec (void *f_name) {
 	char *file_name = f_name;
 	bool success;
+	printf("asf\n");
+	// char *p = (char *)(USER_STACK+sizeof(*(void (*) ())USER_STACK));
+	// char *c;
+	// char **lst;
+
+	// printf("asdf\n");
+	// char *cur;
+	// char *next;
+	// cur = strtok_r(f_name, ' ', &next);
+	// while(cur) { 
+	// 	printf("ret_ptr = [%s]\n", cur); 
+	// 	cur = strtok_r(NULL, ' ', &next); 
+	// }
+	// printf("asdf\n");
+
+
 
 	/* We cannot use the intr_frame in the thread structure.
 	 * This is because when current thread rescheduled,
@@ -200,16 +219,21 @@ process_exec (void *f_name) {
  * This function will be implemented in problem 2-2.  For now, it
  * does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) {
+process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+	printf("process_wait %d\n", child_tid);
+	while(true){
+
+	}
 	return -1;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
 void
 process_exit (void) {
+	printf("process exit\n");
 	struct thread *curr = thread_current ();
 	/* TODO: Your code goes here.
 	 * TODO: Implement process termination message (see
@@ -322,6 +346,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
  * Returns true if successful, false otherwise. */
 static bool
 load (const char *file_name, struct intr_frame *if_) {
+	printf("load\n");
 	struct thread *t = thread_current ();
 	struct ELF ehdr;
 	struct file *file = NULL;

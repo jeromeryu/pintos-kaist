@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "list.h": "c"
-    }
+        "list.h": "c",
+        "flags.h": "c"
+    },
+    "C_Cpp.default.compilerArgs": ["-DUSERPROG"]
 }

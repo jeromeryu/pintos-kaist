@@ -244,6 +244,7 @@ run_task (char **argv) {
 	if (thread_tests){
 		run_test (task);
 	} else {
+		printf("no thread test\n");
 		process_wait (process_create_initd (task));
 	}
 #else
