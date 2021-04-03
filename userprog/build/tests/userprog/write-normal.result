@@ -1,2 +1,1 @@
-FAIL
-run: write() returned 10 instead of 373: FAILED
+PASS

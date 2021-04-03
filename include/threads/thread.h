@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/synch.h"
 #include "threads/interrupt.h"
 #include "filesys/file.h"
 #ifdef VM
@@ -107,7 +108,7 @@ struct thread {
 
 	struct thread * parent;         
 	struct thread * child;    
-	struct semaphore * sema_parent;
+	struct semaphore sema_parent;
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */

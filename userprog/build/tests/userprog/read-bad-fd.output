@@ -4,8 +4,8 @@ Kernel command line: -q -f put read-bad-fd run read-bad-fd
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  65,638,400 loops/s.
-hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
+Calibrating timer...  261,734,400 loops/s.
+hd0:0: detected 321 sector (160 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 103 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
 Formatting file system...done.
@@ -13,24 +13,14 @@ Boot complete.
 Putting 'read-bad-fd' into the file system...
 Executing 'read-bad-fd':
 (read-bad-fd) begin
-Page fault at 0x8104a4a1a0: not present error reading page in kernel context.
-Interrupt 0x0e (#PF Page-Fault Exception) at rip=800421d2f0
- cr2=0000008104a4a1a0 error=               0
-rax 0000008104a4a1a0 rbx 0000000000000000 rcx 000000004747ff8f rdx 00000001008091a0
-rsp 0000008004240ed0 rbp 0000008004240f00 rsi 000000004747ff8f rdi 0000000020101234
-rip 000000800421d2f0 r8 0000000000000000  r9 0000000000000000 r10 0000000000000000
-r11 0000000000000202 r12 000000800421d39d r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000206
-es: 001b ds: 001b cs: 0008 ss: 0010
-Kernel PANIC at ../../userprog/exception.c:97 in kill(): Kernel bug - unexpected interrupt in kernel
-Call stack: 0x8004218558 0x800421ce60 0x800421cfdf 0x800420933d 0x800420975b 0x800421d42a 0x800421d054 0x40010d 0x400219 0x400cba.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 101 ticks
-Thread: 50 idle ticks, 39 kernel ticks, 12 user ticks
+read-bad-fd: exit(-1)
+Execution of 'read-bad-fd' complete.
+Timer: 65 ticks
+Thread: 38 idle ticks, 26 kernel ticks, 1 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 234 writes
 hd1:0: 103 reads, 0 writes
-Console: 1758 characters output
-Key
+Console: 839 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

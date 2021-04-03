@@ -57,18 +57,89 @@ void halt(){
 void exit(int status){
 	thread_current()->tf.R.rax = status;
 	struct thread * t = thread_current();
-	printf("%s: exit(%d)\n", thread_current()->name, 0);
+	printf("%s: exit(%d)\n", thread_current()->name, status);
 	thread_exit();
 }
 
-int write(int fd, const void* buffer, unsigned size){
-	if((thread_current()->fd)[fd]==NULL){
+bool create(const char *file, unsigned initial_size){
+	bool a;
+	if(file == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(file))){
+		exit(-1);
+	}
+	
+	if(!(pml4e_walk (thread_current()->pml4, file, 0))){
+		exit(-1);
+	}
+
+	lock_acquire(&file_lock);
+	a = filesys_create(file, (off_t)initial_size);
+	lock_release(&file_lock);
+	return a;
+}
+
+int open(const char *file){
+	int fd = 0;
+	struct thread *t = thread_current();
+	struct file * tfile;
+	if(file == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(file))){
+		exit(-1);
+	}
+
+	if(!(pml4e_walk (thread_current()->pml4, file, 0))){
+		exit(-1);
+	}
+
+	while(thread_current()->fd[fd] != NULL){
+		fd++;
+	}
+	lock_acquire(&file_lock);
+	tfile = filesys_open(file);
+	if (tfile == NULL){
 		return -1;
+	}
+	tfile = (struct file *)((int)tfile + 0x8000000000);
+	thread_current()->fd[fd] = tfile;
+	lock_release(&file_lock);
+
+	if(thread_current()->fd[fd] == NULL){
+		return -1;
+	}
+
+	return fd;
+}
+
+int filesize(int fd){
+	if(thread_current()->fd[fd] != NULL){
+		return (int)file_length(thread_current()->fd[fd]);
+	}
+	return -1;
+}
+
+int write(int fd, const void* buffer, unsigned size){
+	if (!(is_user_vaddr(buffer))){
+		exit(-1);
+	}
+
+	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
+		exit(-1);
 	}
 
 	if(fd<=0 || fd >= 128){
 		return -1;
 	}
+
+	if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}
+	
 	int res; 
 
 	if(fd==1){
@@ -83,12 +154,24 @@ int write(int fd, const void* buffer, unsigned size){
 }
 
 int read(int fd, void* buffer, unsigned size){
-	if((thread_current()->fd)[fd]==NULL){
-		return -1;
-	}
 
 	if(fd<0 || fd >= 128 || fd==1){
 		return -1;
+	}
+	if(buffer == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(buffer))){
+		exit(-1);
+	}
+
+	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
+		exit(-1);
+	}
+
+	if((thread_current()->fd)[fd]==NULL){
+		exit(-1);
 	}
 	int res; 
 
@@ -138,13 +221,24 @@ int seek(int fd, unsigned position){
 	return 0;
 }
 
+void close(int fd){
+	if(fd > 128){
+		return;
+	}
+	lock_acquire(&file_lock);
+	file_close(thread_current()->fd[fd]);
+	lock_release(&file_lock);
+	thread_current()->fd[fd] = NULL;
+}
+
 
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
 	// printf ("system call!\n");
-	int res; 
+	int res, fd;
+	bool tf;
 
 	switch (f->R.rax)
 	{
@@ -152,7 +246,7 @@ syscall_handler (struct intr_frame *f) {
 		halt();
 		break;
 	case SYS_EXIT:
-		exit(f->R.rsi);
+		exit(f->R.rdi);
 		break;
 	case SYS_FORK:
 		/* code */
@@ -164,37 +258,44 @@ syscall_handler (struct intr_frame *f) {
 		/* code */
 		break;
 	case SYS_CREATE:
-		/* code */
+		tf = create((char *)(f->R.rdi), f->R.rsi);
+		f->R.rax = tf;
 		break;
 	case SYS_REMOVE:
 		/* code */
 		break;
 	case SYS_OPEN:
-		/* code */
+		fd = open((char *)(f->R.rdi));
+		f->R.rax = fd;
 		break;
 	case SYS_FILESIZE:
-		/* code */
+		fd = filesize((int)(f->R.rdi));
+		f->R.rax = fd;
 		break;
 	case SYS_READ:
 		res = read((int)(f->R.rdi), f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
+		f->R.rax = res;
 		break;
 	case SYS_WRITE:
 		res = write((int)(f->R.rdi), f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
+		f->R.rax = res;
 		break;
 	case SYS_SEEK:
 		res = seek((int)(f->R.rdi), f->R.rsi);
 		if(res==-1){
 			thread_current()->tf.R.rax = res;
 		}	
+		f->R.rax = res;
 		break;
 	case SYS_TELL:
 		res = tell((int)(f->R.rdi));
 		thread_current()->tf.R.rax = res;
+		f->R.rax = res;
 		break;
 	case SYS_CLOSE:
-		/* code */
+		close((int)(f->R.rdi));
 		break;
 	default:
 		break;

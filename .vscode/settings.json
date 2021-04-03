@@ -5,7 +5,8 @@
         "syscall.h": "c",
         "file.h": "c",
         "synch.h": "c",
-        "*.inc": "cpp"
+        "*.inc": "cpp",
+        "mmu.h": "c"
     },
     "C_Cpp.default.compilerArgs": ["-DUSERPROG"]
 }

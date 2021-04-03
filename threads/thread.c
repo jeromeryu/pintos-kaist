@@ -523,14 +523,6 @@ init_thread (struct thread *t, const char *name, int priority) {
 	ASSERT (PRI_MIN <= priority && priority <= PRI_MAX);
 	ASSERT (name != NULL);
 	
-	if (t != initial_thread){
-		struct thread *parent = thread_current();
-		t->parent = parent;
-		parent->child = t;
-	}else{
-		t->parent = NULL;
-	}
-
 	memset (t, 0, sizeof *t);
 	t->status = THREAD_BLOCKED;
 	strlcpy (t->name, name, sizeof t->name);
@@ -540,7 +532,16 @@ init_thread (struct thread *t, const char *name, int priority) {
 	list_init(&t->lock);
 	t->lock_wait = NULL;
 	sema_init(&t->sema_parent,0);
-	
+
+	if (t != initial_thread){
+		struct thread *parent = thread_current();
+		t->parent = parent;
+		parent->child = t;
+	}else{
+		t->parent = NULL;
+	}
+
+
 	//advanced scheduling
 	if(thread_mlfqs){
 		t->nice = 0;
