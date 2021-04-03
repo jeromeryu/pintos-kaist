@@ -462,7 +462,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	
 	for(int j=0; j<k; j++){
 		if_->rsp-=8;
-		*(char*)(if_->rsp) = ptrs[j];
+		*(uintptr_t*)(if_->rsp) = ptrs[j];
 	}
 	if_->R.rsi = if_->rsp;
 
