@@ -15,6 +15,8 @@ void halt(void);
 void exit(int status);
 int write(int fd, const void* buffer, unsigned size);
 int read(int fd, void* buffer, unsigned size);
+unsigned tell (int fd);
+int seek(int fd, unsigned position);
 
 /* System call.
  *
@@ -81,7 +83,7 @@ int write(int fd, const void* buffer, unsigned size){
 }
 
 int read(int fd, void* buffer, unsigned size){
-		if((thread_current()->fd)[fd]==NULL){
+	if((thread_current()->fd)[fd]==NULL){
 		return -1;
 	}
 
@@ -90,9 +92,12 @@ int read(int fd, void* buffer, unsigned size){
 	}
 	int res; 
 
+	int i = 0;
 	if(fd==0){
-		
-
+		while (i < size){
+			*((uint8_t *)buffer + i) = input_getc();
+			i++;
+		}
 	} else {
 		lock_acquire(&file_lock);
 		res = file_read(thread_current()->fd[fd], buffer, size);
@@ -100,6 +105,37 @@ int read(int fd, void* buffer, unsigned size){
 		return res;
 	}
 	return size;
+}
+
+unsigned tell (int fd){
+	if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}
+
+	if(fd<=1 || fd >= 128){
+		return -1;
+	}
+
+	int res;
+	lock_acquire(&file_lock);
+	res = file_tell((thread_current()->fd)[0]);
+	lock_release(&file_lock);
+	return res;
+}
+
+int seek(int fd, unsigned position){
+	if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}
+
+	if(fd<=1 || fd >= 128){
+		return -1;
+	}
+
+	lock_acquire(&file_lock);
+	file_seek((thread_current()->fd)[fd] , position);
+	lock_release(&file_lock);
+	return 0;
 }
 
 
@@ -148,10 +184,14 @@ syscall_handler (struct intr_frame *f) {
 		thread_current()->tf.R.rax = res;
 		break;
 	case SYS_SEEK:
-		/* code */
+		res = seek((int)(f->R.rdi), f->R.rsi);
+		if(res==-1){
+			thread_current()->tf.R.rax = res;
+		}	
 		break;
 	case SYS_TELL:
-		/* code */
+		res = tell((int)(f->R.rdi));
+		thread_current()->tf.R.rax = res;
 		break;
 	case SYS_CLOSE:
 		/* code */
