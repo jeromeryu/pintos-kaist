@@ -205,12 +205,12 @@ process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	// for(int i=0; i<10000; i++){
-	// 	thread_yield();
-	// }
-	while(true){
-
+	for(int i=0; i<10000; i++){
+		thread_yield();
 	}
+	// while(true){
+
+	// }
 
 	return -1;
 }
