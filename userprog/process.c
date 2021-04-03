@@ -205,16 +205,20 @@ process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+	// for(int i=0; i<10000; i++){
+	// 	thread_yield();
+	// }
 	while(true){
 
 	}
+
 	return -1;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
 void
 process_exit (void) {
-	printf("process exit\n");
+	// printf("process exit\n");
 	struct thread *curr = thread_current ();
 	/* TODO: Your code goes here.
 	 * TODO: Implement process termination message (see
@@ -453,8 +457,8 @@ load (const char *file_name, struct intr_frame *if_) {
 	}
 
 	while(if_->rsp % 8 != 0){
-		*(char *)(if_->rsp) = '\0';
 		if_->rsp -= 1;
+		*(char *)(if_->rsp) = '\0';
 	}
 
 	if_->rsp -= 8;
@@ -469,7 +473,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	if_->rsp -= 8;
 	*(char *)if_->rsp = 0; //fake return addr
 
-	if_->rsp -= 8; // not sure
+	// if_->rsp -= 8; // not sure
 		
 	success = true;
 

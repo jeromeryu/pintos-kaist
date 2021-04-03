@@ -8,8 +8,12 @@
 #include "threads/flags.h"
 #include "intrinsic.h"
 
+void check_addr(void *addr);
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
+void halt(void);
+void exit(int status);
+
 
 /* System call.
  *
@@ -37,18 +41,37 @@ syscall_init (void) {
 			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
 }
 
+void check_addr(void *addr){
+
+}
+
+void halt(){
+	power_off();
+}
+
+void exit(int status){
+	thread_current()->tf.R.rax = status;
+}
+
+int write(int fd, const void* buffer, unsigned size){
+	if(fd==1){
+		putbuf(buffer, size);
+	}
+	return size;
+}
+
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
-	printf ("system call!\n");
+	// printf ("system call!\n");
 	switch (f->R.rax)
 	{
 	case SYS_HALT:
-		/* code */
+		halt();
 		break;
 	case SYS_EXIT:
-		/* code */
+		exit(f->R.rsi);
 		break;
 	case SYS_FORK:
 		/* code */
@@ -75,7 +98,7 @@ syscall_handler (struct intr_frame *f) {
 		/* code */
 		break;
 	case SYS_WRITE:
-		/* code */
+		write(f->R.rdi, f->R.rsi, f->R.rax);
 		break;
 	case SYS_SEEK:
 		/* code */
@@ -90,5 +113,5 @@ syscall_handler (struct intr_frame *f) {
 		break;
 	}
 
-	thread_exit ();
+	// thread_exit ();
 }
