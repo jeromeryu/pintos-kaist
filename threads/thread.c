@@ -261,7 +261,6 @@ thread_create (const char *name, int priority,
 		palloc_free_page(t);
 		return TID_ERROR;
 	}
-
 	
 	/* Initialize thread. */
 	init_thread (t, name, priority);

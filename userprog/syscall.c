@@ -13,7 +13,8 @@ void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 void halt(void);
 void exit(int status);
-
+int write(int fd, const void* buffer, unsigned size);
+int read(int fd, void* buffer, unsigned size);
 
 /* System call.
  *
@@ -79,6 +80,29 @@ int write(int fd, const void* buffer, unsigned size){
 	return size;
 }
 
+int read(int fd, void* buffer, unsigned size){
+		if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}
+
+	if(fd<0 || fd >= 128 || fd==1){
+		return -1;
+	}
+	int res; 
+
+	if(fd==0){
+		
+
+	} else {
+		lock_acquire(&file_lock);
+		res = file_read(thread_current()->fd[fd], buffer, size);
+		lock_release(&file_lock);
+		return res;
+	}
+	return size;
+}
+
+
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f) {
@@ -116,10 +140,11 @@ syscall_handler (struct intr_frame *f) {
 		/* code */
 		break;
 	case SYS_READ:
-		/* code */
+		res = read((int)(f->R.rdi), f->R.rsi, f->R.rdx);
+		thread_current()->tf.R.rax = res;
 		break;
 	case SYS_WRITE:
-		res = write((int)(f->R.rdi), (const void*)f->R.rsi, f->R.rdx);
+		res = write((int)(f->R.rdi), f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
 		break;
 	case SYS_SEEK:

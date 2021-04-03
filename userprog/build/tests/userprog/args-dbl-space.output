@@ -4,7 +4,11 @@ Kernel command line: -q -f put args-dbl-space run 'args-dbl-space two  spaces!'
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
+<<<<<<< HEAD
 Calibrating timer...  260,915,200 loops/s.
+=======
+Calibrating timer...  66,867,200 loops/s.
+>>>>>>> 1ff8d80974250c85cac7efb7f5009f488d002992
 hd0:0: detected 313 sector (156 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -19,6 +23,7 @@ Executing 'args-dbl-space two  spaces!':
 (args) argv[2] = 'spaces!'
 (args) argv[3] = null
 (args) end
+<<<<<<< HEAD
 args-dbl-space: exit(0)
 Execution of 'args-dbl-space' complete.
 Timer: 62 ticks
@@ -27,6 +32,15 @@ hd0:0: 0 reads, 0 writes
 hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
 Console: 1010 characters output
+=======
+Execution of 'args-dbl-space two  spaces!' complete.
+Timer: 141 ticks
+Thread: 47 idle ticks, 86 kernel ticks, 8 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 80 reads, 232 writes
+hd1:0: 102 reads, 0 writes
+Console: 999 characters output
+>>>>>>> 1ff8d80974250c85cac7efb7f5009f488d002992
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
