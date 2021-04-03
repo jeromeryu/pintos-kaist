@@ -39,6 +39,8 @@ syscall_init (void) {
 	 * mode stack. Therefore, we masked the FLAG_FL. */
 	write_msr(MSR_SYSCALL_MASK,
 			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
+
+	lock_init(&file_lock);
 }
 
 void check_addr(void *addr){
@@ -54,8 +56,22 @@ void exit(int status){
 }
 
 int write(int fd, const void* buffer, unsigned size){
+	if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}
+
+	if(fd<=0 || fd >= 128){
+		return -1;
+	}
+	int res; 
+
 	if(fd==1){
 		putbuf(buffer, size);
+	} else {
+		lock_acquire(&file_lock);
+		res = file_write(thread_current()->fd[fd], buffer, size);
+		lock_release(&file_lock);
+		return res;
 	}
 	return size;
 }
@@ -65,6 +81,8 @@ void
 syscall_handler (struct intr_frame *f) {
 	// TODO: Your implementation goes here.
 	// printf ("system call!\n");
+	int res; 
+
 	switch (f->R.rax)
 	{
 	case SYS_HALT:
@@ -98,7 +116,8 @@ syscall_handler (struct intr_frame *f) {
 		/* code */
 		break;
 	case SYS_WRITE:
-		write(f->R.rdi, f->R.rsi, f->R.rax);
+		res = write((int)(f->R.rdi), (const void*)f->R.rsi, f->R.rdx);
+		thread_current()->tf.R.rax = res;
 		break;
 	case SYS_SEEK:
 		/* code */

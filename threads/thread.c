@@ -193,21 +193,6 @@ thread_tick (void) {
 }
 
 int get_ready_threads_num(){
-	// int count = 0;
-	// if(thread_current() != idle_thread){
-	// 	count += 1;
-	// }
-	// struct list_elem *e;
-	// if(!list_empty(&ready_list)){
-	// 	for(e = list_begin(&ready_list); e!= list_end(&ready_list); e = list_next(e)){
-	// 		struct thread *t = list_entry(e, struct thread, elem);
-	// 		if(t != idle_thread){
-	// 			count += 1;
-	// 		}
-	// 	}
-	// }
-	// return count;
-
 	int count = (int)list_size(&ready_list);
 	if(thread_current() != idle_thread){
 		count += 1;
@@ -270,9 +255,22 @@ thread_create (const char *name, int priority,
 	if (t == NULL)
 		return TID_ERROR;
 
+	struct file **fd;
+	fd = palloc_get_page(0);
+	if(fd == NULL){
+		palloc_free_page(t);
+		return TID_ERROR;
+	}
+
+	
 	/* Initialize thread. */
 	init_thread (t, name, priority);
 	tid = t->tid = allocate_tid ();
+
+	t->fd = fd;
+	memset(t->fd, 0, 128 * sizeof(struct file*));
+	t->fd[0] = (struct file *)1; //input
+	t->fd[1] = (struct file *)1; //output
 
 
 	/* Call the kernel_thread if it scheduled.
