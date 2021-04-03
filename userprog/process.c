@@ -49,6 +49,7 @@ process_create_initd (const char *file_name) {
 	if (fn_copy == NULL)
 		return TID_ERROR;
 	strlcpy (fn_copy, file_name, PGSIZE);
+	file_name = strtok_r(file_name, " ", &file_name);
 
 	/* Create a new thread to execute FILE_NAME. */
 	tid = thread_create (file_name, PRI_DEFAULT, initd, fn_copy);
@@ -208,9 +209,8 @@ process_wait (tid_t child_tid) {
 	// for(int i=0; i<10000; i++){
 	// 	thread_yield();
 	// }
-	while(true){
-
-	}
+	struct thread *t = thread_current();
+	sema_down(&t->child->sema_parent);
 
 	return -1;
 }

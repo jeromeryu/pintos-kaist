@@ -53,6 +53,9 @@ void halt(){
 
 void exit(int status){
 	thread_current()->tf.R.rax = status;
+	struct thread * t = thread_current();
+	printf("%s: exit(%d)\n", thread_current()->name, 0);
+	thread_exit();
 }
 
 int write(int fd, const void* buffer, unsigned size){

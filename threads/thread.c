@@ -367,6 +367,8 @@ thread_tid (void) {
 void
 thread_exit (void) {
 	ASSERT (!intr_context ());
+	struct thread * t = thread_current();
+	sema_up(&t->sema_parent);
 
 #ifdef USERPROG
 	process_exit ();
@@ -521,6 +523,14 @@ init_thread (struct thread *t, const char *name, int priority) {
 	ASSERT (t != NULL);
 	ASSERT (PRI_MIN <= priority && priority <= PRI_MAX);
 	ASSERT (name != NULL);
+	
+	if (t != initial_thread){
+		struct thread *parent = thread_current();
+		t->parent = parent;
+		parent->child = t;
+	}else{
+		t->parent = NULL;
+	}
 
 	memset (t, 0, sizeof *t);
 	t->status = THREAD_BLOCKED;
@@ -530,6 +540,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->magic = THREAD_MAGIC;
 	list_init(&t->lock);
 	t->lock_wait = NULL;
+	sema_init(&t->sema_parent,0);
 	
 	//advanced scheduling
 	if(thread_mlfqs){
