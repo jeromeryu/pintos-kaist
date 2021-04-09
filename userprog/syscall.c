@@ -17,6 +17,8 @@ int write(int fd, const void* buffer, unsigned size);
 int read(int fd, void* buffer, unsigned size);
 unsigned tell (int fd);
 int seek(int fd, unsigned position);
+tid_t fork(const char *name, struct intr_frame *if_);
+
 
 /* System call.
  *
@@ -55,9 +57,10 @@ void halt(){
 }
 
 void exit(int status){
-	thread_current()->tf.R.rax = status;
 	struct thread * t = thread_current();
-	printf("%s: exit(%d)\n", thread_current()->name, status);
+	t->tf.R.rax = status;
+	t->exit_status = status;
+	// printf("%s: exit(%d)\n", t->name, status);
 	thread_exit();
 }
 
@@ -222,7 +225,7 @@ int seek(int fd, unsigned position){
 }
 
 void close(int fd){
-	if(fd > 128){
+	if(fd >= 128){
 		return;
 	}
 	lock_acquire(&file_lock);
@@ -231,6 +234,9 @@ void close(int fd){
 	thread_current()->fd[fd] = NULL;
 }
 
+tid_t fork(const char *name, struct intr_frame *if_){
+	return process_fork(name, if_);
+}
 
 /* The main system call interface */
 void
@@ -249,7 +255,7 @@ syscall_handler (struct intr_frame *f) {
 		exit(f->R.rdi);
 		break;
 	case SYS_FORK:
-		/* code */
+		f->R.rax = fork(f->R.rdi, f);
 		break;
 	case SYS_EXEC:
 		/* code */

@@ -107,7 +107,10 @@ struct thread {
 	int recent_cpu;
 
 	struct thread * parent;         
-	struct thread * child;    
+	// struct thread * child;    
+
+	struct list child_list;
+	struct list_elem child_elem; 
 	struct semaphore sema_parent;
 
 #ifdef USERPROG
@@ -124,6 +127,7 @@ struct thread {
 	unsigned magic;                     /* Detects stack overflow. */
 
 	struct file **fd;
+	int exit_status;
 };
 
 /* If false (default), use round-robin scheduler.

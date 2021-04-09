@@ -269,7 +269,7 @@ thread_create (const char *name, int priority,
 	t->fd = fd;
 	memset(t->fd, 0, 128 * sizeof(struct file*));
 	t->fd[0] = (struct file *)1; //input
-	t->fd[1] = (struct file *)1; //output
+	t->fd[1] = (struct file *)2; //output
 
 
 	/* Call the kernel_thread if it scheduled.
@@ -367,11 +367,11 @@ void
 thread_exit (void) {
 	ASSERT (!intr_context ());
 	struct thread * t = thread_current();
-	sema_up(&t->sema_parent);
 
 #ifdef USERPROG
 	process_exit ();
 #endif
+	sema_up(&t->sema_parent);
 
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
@@ -531,12 +531,16 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->magic = THREAD_MAGIC;
 	list_init(&t->lock);
 	t->lock_wait = NULL;
+
+	list_init(&t->child_list);
 	sema_init(&t->sema_parent,0);
+	t->exit_status = -1;
 
 	if (t != initial_thread){
 		struct thread *parent = thread_current();
 		t->parent = parent;
-		parent->child = t;
+		// parent->child = t;
+		list_push_back(&parent->child_list, &t->child_elem);
 	}else{
 		t->parent = NULL;
 	}
