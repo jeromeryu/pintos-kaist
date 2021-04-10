@@ -6,7 +6,8 @@
         "file.h": "c",
         "synch.h": "c",
         "*.inc": "cpp",
-        "mmu.h": "c"
+        "mmu.h": "c",
+        "filesys.h": "c"
     },
     "C_Cpp.default.compilerArgs": ["-DUSERPROG"]
 }
