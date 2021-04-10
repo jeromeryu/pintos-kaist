@@ -7,6 +7,7 @@
 #include "userprog/gdt.h"
 #include "threads/flags.h"
 #include "intrinsic.h"
+#include "userprog/process.h"
 
 void check_addr(void *addr);
 void syscall_entry (void);
@@ -148,6 +149,9 @@ int write(int fd, const void* buffer, unsigned size){
 	if(fd==1){
 		putbuf(buffer, size);
 	} else {
+		if(thread_current()->fd[fd]==NULL){
+			return -1;
+		}
 		lock_acquire(&file_lock);
 		res = file_write(thread_current()->fd[fd], buffer, size);
 		lock_release(&file_lock);
@@ -252,16 +256,22 @@ syscall_handler (struct intr_frame *f) {
 		halt();
 		break;
 	case SYS_EXIT:
+		f->R.rax = f->R.rdi;
 		exit(f->R.rdi);
 		break;
 	case SYS_FORK:
-		f->R.rax = fork(f->R.rdi, f);
+		f->R.rax = 0;
+		thread_current()->tf.R.rax = 0;
+
+		res = fork(f->R.rdi, f);
+		f->R.rax = res;
 		break;
 	case SYS_EXEC:
 		/* code */
 		break;
 	case SYS_WAIT:
-		/* code */
+		res = process_wait(f->R.rdi);
+		f->R.rax = res;
 		break;
 	case SYS_CREATE:
 		tf = create((char *)(f->R.rdi), f->R.rsi);

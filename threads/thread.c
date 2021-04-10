@@ -371,7 +371,7 @@ thread_exit (void) {
 #ifdef USERPROG
 	process_exit ();
 #endif
-	sema_up(&t->sema_parent);
+	// sema_up(&t->sema_parent);
 
 	/* Just set our status to dying and schedule another process.
 	   We will be destroyed during the call to schedule_tail(). */
@@ -535,6 +535,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	list_init(&t->child_list);
 	sema_init(&t->sema_parent,0);
 	t->exit_status = -1;
+	t->is_process = false;
 
 	if (t != initial_thread){
 		struct thread *parent = thread_current();

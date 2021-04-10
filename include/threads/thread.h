@@ -128,6 +128,8 @@ struct thread {
 
 	struct file **fd;
 	int exit_status;
+	bool is_process;
+	struct semaphore fork_sema;
 };
 
 /* If false (default), use round-robin scheduler.
