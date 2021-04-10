@@ -190,6 +190,18 @@ int write(int fd, const void* buffer, unsigned size){
 		return -1;
 	}
 
+	if(buffer == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(buffer))){
+		exit(-1);
+	}
+
+	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
+		exit(-1);
+	}
+
 	int res; 
 
 	if(fd==1){
@@ -206,6 +218,22 @@ int write(int fd, const void* buffer, unsigned size){
 int read(int fd, void* buffer, unsigned size){
 	if(fd<0 || fd >= 128 || fd==1){
 		return -1;
+	}
+
+	if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}
+
+	if(buffer == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(buffer))){
+		exit(-1);
+	}
+
+	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
+		exit(-1);
 	}
 
 	int res; 
