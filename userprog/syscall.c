@@ -127,10 +127,8 @@ bool remove(const char *file){
 	return a;
 }
 
-int iself(const char * file_name){
-	char * a;
-	a = strstr(file_name,".");
-	if (a == NULL){
+int iself(char * buffer){
+	if(buffer[0] == 127 && buffer[1] == 69 && buffer[2] == 76 && buffer[3] == 70){
 		return 1;
 	}
 	return 0;
@@ -140,6 +138,7 @@ int open(const char *file){
 	int fd = 0;
 	struct thread *t = thread_current();
 	struct file * tfile;
+	char * buffer[4];
 	if(file == NULL){
 		exit(-1);
 	}
@@ -162,7 +161,8 @@ int open(const char *file){
 	}
 	tfile = (struct file *)((int)tfile + 0x8000000000);
 	thread_current()->fd[fd] = tfile;
-	if(iself(file)){
+	file_read_at(tfile, buffer, 4,0);
+	if(iself(buffer)){
 		file_deny_write(thread_current()->fd[fd]);
 	}
 	lock_release(&file_lock);
