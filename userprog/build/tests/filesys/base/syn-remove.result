@@ -1,1 +1,2 @@
-PASS
+FAIL
+run: write "deleteme": FAILED

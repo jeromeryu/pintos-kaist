@@ -14,173 +14,74 @@ Putting 'multi-recurse' into the file system...
 Executing 'multi-recurse 15':
 (multi-recurse) begin 15
 (multi-recurse) exec("multi-recurse 14")
-Kernel PANIC at ../../threads/thread.c:352 in thread_current(): assertion `is_thread (t)' failed.
-Call stack: 0x8004218589 0x80042074fb 0x8004206b8e 0x8004212400 0x800420936e 0x800420978c 0x800421a60c 0x800421a7f3 0x800421a84e 0x800420bb49 0x800420bc28 0x800420c95f 0x800420cbbc 0x800420cda0 0x800420d645 0x800421cf53 0x800421ce14 0x800421c808 0x800421c126 0x800421d713 0x800421e078 0x800421d4e9Kernel PANIC recursion at ../../threads/interrupt.c:138 in intr_enable().
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220a3c
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 00000080042222bd rdx 0000000000000034
-rsp 000000800423fbd0 rbp 000000800423fbe0 rsi 00000000000000d8 rdi cccccccccccccccc
-rip 0000008004220a3c r8 00000080042222ea  r9 00000080042184ae r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000002
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000003d
-rsp 000000800423f9c0 rbp 000000800423f9d0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000006
-rsp 000000800423f7b0 rbp 000000800423f7c0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000000f
-rsp 000000800423f5a0 rbp 000000800423f5b0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000018
-rsp 000000800423f390 rbp 000000800423f3a0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000021
-rsp 000000800423f180 rbp 000000800423f190 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000002a
-rsp 000000800423ef70 rbp 000000800423ef80 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000033
-rsp 000000800423ed60 rbp 000000800423ed70 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000003c
-rsp 000000800423eb50 rbp 000000800423eb60 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000005
-rsp 000000800423e940 rbp 000000800423e950 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000000e
-rsp 000000800423e730 rbp 000000800423e740 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000017
-rsp 000000800423e520 rbp 000000800423e530 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000020
-rsp 000000800423e310 rbp 000000800423e320 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000029
-rsp 000000800423e100 rbp 000000800423e110 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000032
-rsp 000000800423def0 rbp 000000800423df00 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000003b
-rsp 000000800423dce0 rbp 000000800423dcf0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000004
-rsp 000000800423dad0 rbp 000000800423dae0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000000d
-rsp 000000800423d8c0 rbp 000000800423d8d0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000016
-rsp 000000800423d6b0 rbp 000000800423d6c0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 000000000000001f
-rsp 000000800423d4a0 rbp 000000800423d4b0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Interrupt 0x0d (#GP General Protection Exception) at rip=8004220522
- cr2=000000004747fef0 error=               0
-rax cccccccccccccccc rbx ffffffffffffffff rcx 0000008004226310 rdx 0000000000000028
-rsp 000000800423d290 rbp 000000800423d2a0 rsi 000000000000000a rdi cccccccccccccccc
-rip 0000008004220522 r8 00000080042184ae  r9 000000800421ba02 r10 0000000000005000
-r11 0000000000000212 r12 000000800421df98 r13 0000000000000000 r14 0000000000000000
-r15 0000000000000000 rflags 00000086
-es: 0010 ds: 0010 cs: 0008 ss: 0010
+(multi-recurse) begin 14
+(multi-recurse) exec("multi-recurse 13")
+(multi-recurse) begin 13
+(multi-recurse) exec("multi-recurse 12")
+(multi-recurse) begin 12
+(multi-recurse) exec("multi-recurse 11")
+(multi-recurse) begin 11
+(multi-recurse) exec("multi-recurse 10")
+(multi-recurse) begin 10
+(multi-recurse) exec("multi-recurse 9")
+(multi-recurse) begin 9
+(multi-recurse) exec("multi-recurse 8")
+(multi-recurse) begin 8
+(multi-recurse) exec("multi-recurse 7")
+(multi-recurse) begin 7
+(multi-recurse) exec("multi-recurse 6")
+(multi-recurse) begin 6
+(multi-recurse) exec("multi-recurse 5")
+(multi-recurse) begin 5
+(multi-recurse) exec("multi-recurse 4")
+(multi-recurse) begin 4
+(multi-recurse) exec("multi-recurse 3")
+(multi-recurse) begin 3
+(multi-recurse) exec("multi-recurse 2")
+(multi-recurse) begin 2
+(multi-recurse) exec("multi-recurse 1")
+(multi-recurse) begin 1
+(multi-recurse) exec("multi-recurse 0")
+(multi-recurse) begin 0
+(multi-recurse) end 0
+multi-recurse: exit(0)
+(multi-recurse) end 1
+multi-recurse: exit(1)
+(multi-recurse) end 2
+multi-recurse: exit(2)
+(multi-recurse) end 3
+multi-recurse: exit(3)
+(multi-recurse) end 4
+multi-recurse: exit(4)
+(multi-recurse) end 5
+multi-recurse: exit(5)
+(multi-recurse) end 6
+multi-recurse: exit(6)
+(multi-recurse) end 7
+multi-recurse: exit(7)
+(multi-recurse) end 8
+multi-recurse: exit(8)
+(multi-recurse) end 9
+multi-recurse: exit(9)
+(multi-recurse) end 10
+multi-recurse: exit(10)
+(multi-recurse) end 11
+multi-recurse: exit(11)
+(multi-recurse) end 12
+multi-recurse: exit(12)
+(multi-recurse) end 13
+multi-recurse: exit(13)
+(multi-recurse) end 14
+multi-recurse: exit(14)
+(multi-recurse) end 15
+multi-recurse: exit(15)
+Execution of 'multi-recurse' complete.
+Timer: 98 ticks
+Thread: 30 idle ticks, 36 kernel ticks, 32 user ticks
+hd0:0: 0 reads, 0 writes
+hd0:1: 882 reads, 254 writes
+hd1:0: 113 reads, 0 writes
+Console: 2544 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

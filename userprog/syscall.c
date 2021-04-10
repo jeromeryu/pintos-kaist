@@ -9,6 +9,7 @@
 #include "intrinsic.h"
 #include "userprog/process.h"
 #include "threads/palloc.h"
+#include <string.h>
 
 void check_addr(void *addr);
 void syscall_entry (void);
@@ -80,7 +81,7 @@ int exec(const char *cmd_line){
 	if(!(pml4e_walk (thread_current()->pml4, cmd_line, 0))){
 		exit(-1);
 	}
-	
+
 	fn_copy = palloc_get_page(PAL_USER);
 	if (fn_copy == NULL)
 		return TID_ERROR;
@@ -112,6 +113,34 @@ bool create(const char *file, unsigned initial_size){
 	return a;
 }
 
+bool remove(const char *file){
+	bool a;
+	if(file == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(file))){
+		exit(-1);
+	}
+	
+	if(!(pml4e_walk (thread_current()->pml4, file, 0))){
+		exit(-1);
+	}
+	lock_acquire(&file_lock);
+	a = filesys_remove(file);
+	lock_release(&file_lock);
+	return a;
+}
+
+int iself(const char * file_name){
+	char * a;
+	a = strstr(file_name,".");
+	if (a == NULL){
+		return 1;
+	}
+	return 0;
+}
+
 int open(const char *file){
 	int fd = 0;
 	struct thread *t = thread_current();
@@ -138,6 +167,9 @@ int open(const char *file){
 	}
 	tfile = (struct file *)((int)tfile + 0x8000000000);
 	thread_current()->fd[fd] = tfile;
+	if(iself(file)){
+		file_deny_write(thread_current()->fd[fd]);
+	}
 	lock_release(&file_lock);
 
 	if(thread_current()->fd[fd] == NULL){
@@ -250,6 +282,7 @@ int seek(int fd, unsigned position){
 	}
 
 	lock_acquire(&file_lock);
+	file_allow_write(thread_current()->fd[fd]);
 	file_seek((thread_current()->fd)[fd] , position);
 	lock_release(&file_lock);
 	return 0;
@@ -260,6 +293,9 @@ void close(int fd){
 		return;
 	}
 	lock_acquire(&file_lock);
+	if(thread_current()->fd[fd] != NULL){
+		file_allow_write(thread_current()->fd[fd]);
+	}
 	file_close(thread_current()->fd[fd]);
 	lock_release(&file_lock);
 	thread_current()->fd[fd] = NULL;
@@ -306,7 +342,8 @@ syscall_handler (struct intr_frame *f) {
 		f->R.rax = tf;
 		break;
 	case SYS_REMOVE:
-		/* code */
+		tf = remove((const char*)f->R.rdi);
+		f->R.rax = tf;
 		break;
 	case SYS_OPEN:
 		fd = open((char *)(f->R.rdi));
