@@ -155,30 +155,35 @@ int filesize(int fd){
 }
 
 int write(int fd, const void* buffer, unsigned size){
+	if(fd<=0 || fd >= 128){
+		return -1;
+	}
+	
 	if (!(is_user_vaddr(buffer))){
 		exit(-1);
 	}
 
-	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
+	if(pml4e_walk (thread_current()->pml4, buffer, 0)==NULL){
 		exit(-1);
 	}
 
-	if(fd<=0 || fd >= 128){
-		return -1;
+	if(!is_user_pte(pml4e_walk(thread_current()->pml4, buffer, 0))){
+		exit(-1);
+	}
+	
+	if(buffer == NULL){
+		exit(-1);
 	}
 
 	if((thread_current()->fd)[fd]==NULL){
 		return -1;
 	}
-	
+
 	int res; 
 
 	if(fd==1){
 		putbuf(buffer, size);
 	} else {
-		if(thread_current()->fd[fd]==NULL){
-			return -1;
-		}
 		lock_acquire(&file_lock);
 		res = file_write(thread_current()->fd[fd], buffer, size);
 		lock_release(&file_lock);
