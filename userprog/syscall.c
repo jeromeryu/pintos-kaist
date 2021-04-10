@@ -56,6 +56,7 @@ void halt(){
 
 void exit(int status){
 	struct thread * t = thread_current();
+	sema_down(&t->wait_sema);
 	t->tf.R.rax = status;
 	t->exit_status = status;
 	t->parent->child_exit_status = status;

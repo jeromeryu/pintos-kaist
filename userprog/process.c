@@ -281,6 +281,7 @@ process_wait (tid_t child_tid) {
 	struct thread *t = thread_current();
 	struct thread *child = NULL;
 	struct list_elem *e;
+
 	for(e = list_begin(&t->child_list); e != list_end(&t->child_list); e = list_next(e)){
 		struct thread *iter_thread = list_entry(e, struct thread, child_elem);
 		if(iter_thread->tid==child_tid){
@@ -288,16 +289,16 @@ process_wait (tid_t child_tid) {
 			break;
 		}
 	}
+	// sema_up(&child->wait_sema);
 
 	if(child == NULL){
 		return -1;
 	}
+	sema_up(&child->wait_sema);
 
-	struct list_elem child_le = child->child_elem;
-	sema_down(&child->sema_parent);
+	// struct list_elem child_le = child->child_elem;
+	sema_down(&t->exit_sema);
 
-	
-	list_remove(&child_le);
 
 	// printf("wait %d\n", child->exit_status);
 	tid_t exit_status = t->child_exit_status;
@@ -315,6 +316,7 @@ process_exit (void) {
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
+	// sema_down(&curr->wait_sema);
 	if(curr->is_process){
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
 	}
@@ -331,9 +333,9 @@ process_exit (void) {
 		palloc_free_page(curr->fd);
 	}
 
-	sema_up(&curr->sema_parent);
+	sema_up(&curr->parent->exit_sema);
 
-
+	list_remove(&curr->child_elem);
 	process_cleanup ();
 }
 

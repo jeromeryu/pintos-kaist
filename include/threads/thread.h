@@ -111,7 +111,6 @@ struct thread {
 
 	struct list child_list;
 	struct list_elem child_elem; 
-	struct semaphore sema_parent;
 
 #ifdef USERPROG
 	/* Owned by userprog/process.c. */
@@ -130,6 +129,8 @@ struct thread {
 	int exit_status;
 	bool is_process;
 	struct semaphore fork_sema;
+	struct semaphore wait_sema;
+	struct semaphore exit_sema;
 	int child_exit_status;
 	int recent_child_tid;
 };

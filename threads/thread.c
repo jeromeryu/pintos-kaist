@@ -533,7 +533,8 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->lock_wait = NULL;
 
 	list_init(&t->child_list);
-	sema_init(&t->sema_parent,0);
+	sema_init(&t->wait_sema,0);
+	sema_init(&t->exit_sema,0);
 	t->exit_status = -1;
 	t->is_process = false;
 	t->recent_child_tid = 0;
