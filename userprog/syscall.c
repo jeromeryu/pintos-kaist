@@ -8,6 +8,7 @@
 #include "threads/flags.h"
 #include "intrinsic.h"
 #include "userprog/process.h"
+#include "threads/palloc.h"
 
 void check_addr(void *addr);
 void syscall_entry (void);
@@ -63,6 +64,32 @@ void exit(int status){
 	t->exit_status = status;
 	// printf("%s: exit(%d)\n", t->name, status);
 	thread_exit();
+}
+
+int exec(const char *cmd_line){
+	int i;
+	char *fn_copy;
+	if(cmd_line == NULL){
+		exit(-1);
+	}
+
+	if (!(is_user_vaddr(cmd_line))){
+		exit(-1);
+	}
+
+	if(!(pml4e_walk (thread_current()->pml4, cmd_line, 0))){
+		exit(-1);
+	}
+	
+	fn_copy = palloc_get_page(PAL_USER);
+	if (fn_copy == NULL)
+		return TID_ERROR;
+	strlcpy (fn_copy, cmd_line, PGSIZE);
+	i = process_exec(fn_copy);
+	if(i = -1){
+		exit(-1);
+	}
+	return i;
 }
 
 bool create(const char *file, unsigned initial_size){
@@ -267,7 +294,8 @@ syscall_handler (struct intr_frame *f) {
 		f->R.rax = res;
 		break;
 	case SYS_EXEC:
-		/* code */
+		res = exec((const char *)f->R.rdi);
+		f->R.rax = res;
 		break;
 	case SYS_WAIT:
 		res = process_wait(f->R.rdi);

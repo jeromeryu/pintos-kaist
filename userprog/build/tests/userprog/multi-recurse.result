@@ -1,0 +1,26 @@
+FAIL
+Kernel panic in run: PANIC at ../../threads/thread.c:352 in thread_current(): assertion `is_thread (t)' failed.
+Call stack: 0x8004218589 0x80042074fb 0x8004206b8e 0x8004212400 0x800420936e 0x800420978c 0x800421a60c 0x800421a7f3 0x800421a84e 0x800420bb49 0x800420bc28 0x800420c95f 0x800420cbbc 0x800420cda0 0x800420d645 0x800421cf53 0x800421ce14 0x800421c808 0x800421c126 0x800421d713 0x800421e078 0x800421d4e9
+Translation of call stack:
+0x0000008004218589: debug_panic (lib/kernel/debug.c:32)
+0x00000080042074fb: thread_current (threads/thread.c:353)
+0x0000008004206b8e: thread_tick (threads/thread.c:147)
+0x0000008004212400: timer_interrupt (devices/timer.c:155)
+0x000000800420936e: intr_handler (threads/interrupt.c:352)
+0x000000800420978c: intr_entry (threads/intr-stubs.o:?)
+0x000000800421a60c: bitmap_contains (lib/kernel/bitmap.c:238)
+0x000000800421a7f3: bitmap_scan (lib/kernel/bitmap.c:279)
+0x000000800421a84e: bitmap_scan_and_flip (lib/kernel/bitmap.c:294)
+0x000000800420bb49: palloc_get_multiple (threads/palloc.c:267 (discriminator 4))
+0x000000800420bc28: palloc_get_page (threads/palloc.c:297)
+0x000000800420c95f: pgdir_walk (threads/mmu.c:18)
+0x000000800420cbbc: pdpe_walk (threads/mmu.c:49)
+0x000000800420cda0: pml4e_walk (threads/mmu.c:82)
+0x000000800420d645: pml4_set_page (threads/mmu.c:239)
+0x000000800421cf53: install_page (userprog/process.c:724 (discriminator 1))
+0x000000800421ce14: load_segment (userprog/process.c:678)
+0x000000800421c808: load (userprog/process.c:515)
+0x000000800421c126: process_exec (userprog/process.c:244)
+0x000000800421d713: exec (userprog/syscall.c:88)
+0x000000800421e078: syscall_handler (userprog/syscall.c:297)
+0x000000800421d4e9: no_sti (userprog/syscall-entry.o:?)
