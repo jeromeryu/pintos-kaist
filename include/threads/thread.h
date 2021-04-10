@@ -130,6 +130,7 @@ struct thread {
 	int exit_status;
 	bool is_process;
 	struct semaphore fork_sema;
+	int child_exit_status;
 };
 
 /* If false (default), use round-robin scheduler.

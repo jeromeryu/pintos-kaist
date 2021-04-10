@@ -11,7 +11,6 @@
 #include "threads/palloc.h"
 #include <string.h>
 
-void check_addr(void *addr);
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 void halt(void);
@@ -51,10 +50,6 @@ syscall_init (void) {
 	lock_init(&file_lock);
 }
 
-void check_addr(void *addr){
-
-}
-
 void halt(){
 	power_off();
 }
@@ -63,7 +58,7 @@ void exit(int status){
 	struct thread * t = thread_current();
 	t->tf.R.rax = status;
 	t->exit_status = status;
-	// printf("%s: exit(%d)\n", t->name, status);
+	t->parent->child_exit_status = status;
 	thread_exit();
 }
 
@@ -190,22 +185,6 @@ int write(int fd, const void* buffer, unsigned size){
 	if(fd<=0 || fd >= 128){
 		return -1;
 	}
-	
-	if (!(is_user_vaddr(buffer))){
-		exit(-1);
-	}
-
-	if(pml4e_walk (thread_current()->pml4, buffer, 0)==NULL){
-		exit(-1);
-	}
-
-	if(!is_user_pte(pml4e_walk(thread_current()->pml4, buffer, 0))){
-		exit(-1);
-	}
-	
-	if(buffer == NULL){
-		exit(-1);
-	}
 
 	if((thread_current()->fd)[fd]==NULL){
 		return -1;
@@ -225,25 +204,10 @@ int write(int fd, const void* buffer, unsigned size){
 }
 
 int read(int fd, void* buffer, unsigned size){
-
 	if(fd<0 || fd >= 128 || fd==1){
 		return -1;
 	}
-	if(buffer == NULL){
-		exit(-1);
-	}
 
-	if (!(is_user_vaddr(buffer))){
-		exit(-1);
-	}
-
-	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
-		exit(-1);
-	}
-
-	if((thread_current()->fd)[fd]==NULL){
-		exit(-1);
-	}
 	int res; 
 
 	int i = 0;
@@ -317,6 +281,7 @@ syscall_handler (struct intr_frame *f) {
 	// printf ("system call!\n");
 	int res, fd;
 	bool tf;
+	tid_t tid;
 
 	switch (f->R.rax)
 	{
@@ -339,8 +304,8 @@ syscall_handler (struct intr_frame *f) {
 		f->R.rax = res;
 		break;
 	case SYS_WAIT:
-		res = process_wait(f->R.rdi);
-		f->R.rax = res;
+		tid = process_wait(f->R.rdi);
+		f->R.rax = tid;
 		break;
 	case SYS_CREATE:
 		tf = create((char *)(f->R.rdi), f->R.rsi);
@@ -359,12 +324,12 @@ syscall_handler (struct intr_frame *f) {
 		f->R.rax = fd;
 		break;
 	case SYS_READ:
-		res = read((int)(f->R.rdi), f->R.rsi, f->R.rdx);
+		res = read((int)(f->R.rdi), (void* )f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
 		f->R.rax = res;
 		break;
 	case SYS_WRITE:
-		res = write((int)(f->R.rdi), f->R.rsi, f->R.rdx);
+		res = write((int)(f->R.rdi), (void* )f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
 		f->R.rax = res;
 		break;

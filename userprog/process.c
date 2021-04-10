@@ -289,10 +289,12 @@ process_wait (tid_t child_tid) {
 	struct list_elem child_le = child->child_elem;
 	sema_down(&child->sema_parent);
 
-	tid_t exit_status = child->exit_status;
-
+	
 	list_remove(&child_le);
 
+	// printf("wait %d\n", child->exit_status);
+	tid_t exit_status = t->child_exit_status;
+	
 	return exit_status;
 }
 
