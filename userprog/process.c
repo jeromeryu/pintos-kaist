@@ -103,8 +103,11 @@ process_fork (const char *name, struct intr_frame *if_) {
 	tid_t tid = thread_create (name, PRI_DEFAULT, __do_fork, ih);
 
 	if(tid!=TID_ERROR){
-		// sema_down(&ih->sema);
 		sema_down(&thread_current()->fork_sema);
+		if(ih->thread->recent_child_tid == TID_ERROR){
+			palloc_free_page(ih);
+			return TID_ERROR;
+		}
 	}
 
 	palloc_free_page(ih);
@@ -205,7 +208,9 @@ __do_fork (void *aux) {
 		} else {
 			struct file *f = file_duplicate(parent->fd[i]);
 			if(f == NULL){
-
+				// sema_up(&parent->fork_sema);
+				// parent->recent_child_tid = TID_ERROR;
+				// break;				
 			}
 			current->fd[i] = f;
 		}
@@ -219,6 +224,8 @@ __do_fork (void *aux) {
 		do_iret (&if_);
 	}
 error:
+	sema_up(&parent->fork_sema);
+	parent->recent_child_tid = TID_ERROR;
 	thread_exit ();
 }
 

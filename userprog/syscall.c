@@ -154,9 +154,13 @@ int open(const char *file){
 	while(thread_current()->fd[fd] != NULL){
 		fd++;
 	}
+	if(fd>=128){
+		return -1;
+	}
 	lock_acquire(&file_lock);
 	tfile = filesys_open(file);
 	if (tfile == NULL){
+		lock_release(&file_lock);
 		return -1;
 	}
 	tfile = (struct file *)((int)tfile + 0x8000000000);

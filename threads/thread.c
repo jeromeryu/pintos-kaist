@@ -536,6 +536,7 @@ init_thread (struct thread *t, const char *name, int priority) {
 	sema_init(&t->sema_parent,0);
 	t->exit_status = -1;
 	t->is_process = false;
+	t->recent_child_tid = 0;
 
 	if (t != initial_thread){
 		struct thread *parent = thread_current();
