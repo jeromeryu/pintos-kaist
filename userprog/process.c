@@ -276,7 +276,6 @@ process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
-	printf("wait %d\n", child_tid);
 
 	struct thread *t = thread_current();
 	struct thread *child = NULL;
@@ -305,30 +304,22 @@ process_wait (tid_t child_tid) {
 	}
 
 	if(child == NULL){
-		printf("null\n");
 		return -1;
 	}
 
 	// struct list_elem child_le = child->child_elem;
-	printf("wait for exit %d\n", child_tid);
 	// sema_down(&t->exit_sema);
 	sema_down(&child->exit_sema);
 
 	tid_t es = TID_ERROR;
 	for(int i=0; i<32; i++){
-		printf("asdf ");
-		printf("%d ", t->dead_child_status[i*2]);
 		if(t->dead_child_status[i*2]==child_tid){
 			es = t->dead_child_status[i*2+1];
 			t->dead_child_status[i*2] = -1;
 			t->dead_child_status[i*2+1] = -1;
-			printf("dead is here %d\n", es);
 			break;
 		}
 	}
-	printf("\n");
-
-	printf("wait %d %d\n", child_tid, es);
 	// tid_t exit_status = child->exit_status;
 	// list_remove(&child->status_elem);
 
@@ -348,7 +339,6 @@ process_exit (void) {
 	// sema_down(&curr->wait_sema);
 	if(curr->is_process){
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
-		printf("exit %d\n", curr->tid);
 	}
 
 
@@ -369,11 +359,9 @@ process_exit (void) {
 		if(curr->parent->dead_child_status[i*2]==-1){
 			curr->parent->dead_child_status[i*2] = curr->tid;
 			curr->parent->dead_child_status[i*2+1] = curr->exit_status;
-			printf("is_added_to_dead\n");
 			break;
 		}
 	}
-	printf("sema_up %d\n", curr->tid);
 
 	sema_up(&curr->exit_sema);
 	list_remove(&curr->child_elem);
