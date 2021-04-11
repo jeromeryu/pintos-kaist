@@ -101,7 +101,6 @@ process_fork (const char *name, struct intr_frame *if_) {
 	sema_init(&thread_current()->fork_sema,0);
 	
 	tid_t tid = thread_create (name, PRI_DEFAULT, __do_fork, ih);
-
 	if(tid!=TID_ERROR){
 		sema_down(&thread_current()->fork_sema);
 		if(ih->thread->recent_child_tid == TID_ERROR){
@@ -246,10 +245,10 @@ process_exec (void *f_name) {
 
 	/* We first kill the current context */
 	process_cleanup ();
-
 	/* And then load the binary */
+	lock_acquire(&file_lock);
 	success = load (file_name, &_if);
-
+	lock_release(&file_lock);
 	/* If load failed, quit. */
 	palloc_free_page (file_name);
 
@@ -277,33 +276,63 @@ process_wait (tid_t child_tid) {
 	/* XXX: Hint) The pintos exit if process_wait (initd), we recommend you
 	 * XXX:       to add infinite loop here before
 	 * XXX:       implementing the process_wait. */
+	printf("wait %d\n", child_tid);
 
 	struct thread *t = thread_current();
 	struct thread *child = NULL;
+	// struct status_holder *child = NULL;
 	struct list_elem *e;
+
 
 	for(e = list_begin(&t->child_list); e != list_end(&t->child_list); e = list_next(e)){
 		struct thread *iter_thread = list_entry(e, struct thread, child_elem);
 		if(iter_thread->tid==child_tid){
+			// printf("child is alive %d\n", child_tid);
 			child = iter_thread;
 			break;
 		}
 	}
-	// sema_up(&child->wait_sema);
+
+	if(child==NULL){
+		for(int i=0; i<32; i++){
+			if(t->dead_child_status[i*2]==child_tid){
+				tid_t es = t->dead_child_status[i*2+1];
+				t->dead_child_status[i*2] = -1;
+				t->dead_child_status[i*2+1] = -1;
+				return es;
+			}
+		}
+	}
 
 	if(child == NULL){
+		printf("null\n");
 		return -1;
 	}
-	sema_up(&child->wait_sema);
 
 	// struct list_elem child_le = child->child_elem;
-	sema_down(&t->exit_sema);
+	printf("wait for exit %d\n", child_tid);
+	// sema_down(&t->exit_sema);
+	sema_down(&child->exit_sema);
 
+	tid_t es = TID_ERROR;
+	for(int i=0; i<32; i++){
+		printf("asdf ");
+		printf("%d ", t->dead_child_status[i*2]);
+		if(t->dead_child_status[i*2]==child_tid){
+			es = t->dead_child_status[i*2+1];
+			t->dead_child_status[i*2] = -1;
+			t->dead_child_status[i*2+1] = -1;
+			printf("dead is here %d\n", es);
+			break;
+		}
+	}
+	printf("\n");
 
-	// printf("wait %d\n", child->exit_status);
-	tid_t exit_status = t->child_exit_status;
-	
-	return exit_status;
+	printf("wait %d %d\n", child_tid, es);
+	// tid_t exit_status = child->exit_status;
+	// list_remove(&child->status_elem);
+
+	return es;
 }
 
 /* Exit the process. This function is called by thread_exit (). */
@@ -319,6 +348,7 @@ process_exit (void) {
 	// sema_down(&curr->wait_sema);
 	if(curr->is_process){
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
+		printf("exit %d\n", curr->tid);
 	}
 
 
@@ -333,9 +363,23 @@ process_exit (void) {
 		palloc_free_page(curr->fd);
 	}
 
-	sema_up(&curr->parent->exit_sema);
 
+	// sema_up(&curr->parent->exit_sema);
+	for(int i=0; i<32; i++){
+		if(curr->parent->dead_child_status[i*2]==-1){
+			curr->parent->dead_child_status[i*2] = curr->tid;
+			curr->parent->dead_child_status[i*2+1] = curr->exit_status;
+			printf("is_added_to_dead\n");
+			break;
+		}
+	}
+	printf("sema_up %d\n", curr->tid);
+
+	sema_up(&curr->exit_sema);
 	list_remove(&curr->child_elem);
+
+
+
 	process_cleanup ();
 }
 

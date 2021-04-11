@@ -56,10 +56,11 @@ void halt(){
 
 void exit(int status){
 	struct thread * t = thread_current();
-	sema_down(&t->wait_sema);
+	printf("exit %d status %d\n", t->tid, status);
+	// sema_down(&t->wait_sema);
 	t->tf.R.rax = status;
 	t->exit_status = status;
-	t->parent->child_exit_status = status;
+	// t->parent->child_exit_status = status;
 	thread_exit();
 }
 
@@ -67,14 +68,19 @@ int exec(const char *cmd_line){
 	int i;
 	char *fn_copy;
 	if(cmd_line == NULL){
+		printf("exit cmdnull\n");
 		exit(-1);
 	}
 
 	if (!(is_user_vaddr(cmd_line))){
+		printf("exit !(is_user_vaddr(cmd_line))\n");
+
 		exit(-1);
 	}
 
 	if(!(pml4e_walk (thread_current()->pml4, cmd_line, 0))){
+		printf("exit !(pml4e_walk (thread_current()->pml4, cmd_line, 0))\n");
+
 		exit(-1);
 	}
 
@@ -84,6 +90,8 @@ int exec(const char *cmd_line){
 	strlcpy (fn_copy, cmd_line, PGSIZE);
 	i = process_exec(fn_copy);
 	if(i = -1){
+		printf("i=-1\n");
+
 		exit(-1);
 	}
 	return i;

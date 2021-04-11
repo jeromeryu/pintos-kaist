@@ -20,6 +20,8 @@ enum thread_status {
 	THREAD_DYING        /* About to be destroyed. */
 };
 
+
+
 /* Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
@@ -29,6 +31,8 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
+
+
 
 /* A kernel thread or user process.
  *
@@ -133,6 +137,8 @@ struct thread {
 	struct semaphore exit_sema;
 	int child_exit_status;
 	int recent_child_tid;
+
+	int dead_child_status[64];
 };
 
 /* If false (default), use round-robin scheduler.

@@ -367,7 +367,6 @@ void
 thread_exit (void) {
 	ASSERT (!intr_context ());
 	struct thread * t = thread_current();
-
 #ifdef USERPROG
 	process_exit ();
 #endif
@@ -539,11 +538,17 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->is_process = false;
 	t->recent_child_tid = 0;
 
+	for(int i=0; i<64; i++){
+		t->dead_child_status[i] = -1;
+	}
+
 	if (t != initial_thread){
 		struct thread *parent = thread_current();
 		t->parent = parent;
 		// parent->child = t;
+
 		list_push_back(&parent->child_list, &t->child_elem);
+		// list_push_back(&parent->child_list, &sh.status_elem);
 	}else{
 		t->parent = NULL;
 	}
