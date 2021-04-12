@@ -285,9 +285,7 @@ thread_create (const char *name, int priority,
 
 	/* Add to run queue. */
 	thread_unblock (t);
-	// printf("%d %s %d %s\n", t->priority, t->name, thread_current()->priority, thread_current()->name);
 	if (t->priority > thread_current()->priority){
-		// printf("yield\n");
 		thread_yield();
 	}
 
@@ -432,13 +430,11 @@ void
 thread_set_nice (int nice) {
 	struct thread *t = thread_current();
 	t->nice = nice;
-	// calculate_priority();
 
 	int pri = PRI_MAX - float2intround(t->recent_cpu / 4) - t->nice * 2;
 	t->priority = check_pri(pri);
 
 	if(!list_empty(&ready_list)){
-		// list_sort(&ready_list, compare_thread_priority, NULL);
 		struct thread *tmax  = list_entry(list_begin(&ready_list), struct thread, elem);
 		if(t->priority < tmax->priority){
 			thread_yield();
@@ -532,27 +528,23 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->lock_wait = NULL;
 
 	list_init(&t->child_list);
-	sema_init(&t->wait_sema,0);
+	// sema_init(&t->wait_sema,0);
 	sema_init(&t->exit_sema,0);
 	t->exit_status = -1;
 	t->is_process = false;
 	t->recent_child_tid = 0;
 
-	for(int i=0; i<64; i++){
+	for(int i=0; i<NUM_DEAD; i++){
 		t->dead_child_status[i] = -1;
 	}
 
 	if (t != initial_thread){
 		struct thread *parent = thread_current();
 		t->parent = parent;
-		// parent->child = t;
-
 		list_push_back(&parent->child_list, &t->child_elem);
-		// list_push_back(&parent->child_list, &sh.status_elem);
 	}else{
 		t->parent = NULL;
 	}
-
 
 	//advanced scheduling
 	if(thread_mlfqs){
@@ -783,32 +775,6 @@ get_highest_lock_priority(struct thread *t) {
 	}
 	return highest_priority;
 }
-
-/*
-void
-reorder_lock_priority() {
-	struct list_elem *e1;
-	struct thread *t;
-
-	bool is_modified = false;
-
-	if(!list_empty(&ready_list)){
-		e1 = list_begin(&ready_list);
-		while(e1!=list_end(&ready_list)){
-			struct thread *t = list_entry(e1, struct thread, elem);
-			int val = get_highest_lock_priority(t);
-			if (val > t->priority) {
-				t->priority = val;
-				is_modified = true;
-			}
-			e1 = list_next(e1);
-		}
-	}
-	if(is_modified){
-		list_sort(&ready_list, compare_thread_priority, NULL);
-	}
-}
-*/
 
 /*sort ready_list accoring to thread's priority*/
 void

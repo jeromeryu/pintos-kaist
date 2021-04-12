@@ -32,7 +32,7 @@ typedef int tid_t;
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
 
-
+#define NUM_DEAD 32
 
 /* A kernel thread or user process.
  *
@@ -127,18 +127,20 @@ struct thread {
 
 	/* Owned by thread.c. */
 	struct intr_frame tf;               /* Information for switching */
-	unsigned magic;                     /* Detects stack overflow. */
 
 	struct file **fd;
 	int exit_status;
 	bool is_process;
 	struct semaphore fork_sema;
-	struct semaphore wait_sema;
 	struct semaphore exit_sema;
 	int child_exit_status;
 	int recent_child_tid;
 
-	int dead_child_status[64];
+	int dead_child_status[NUM_DEAD];
+
+	unsigned magic;                     /* Detects stack overflow. */
+
+
 };
 
 /* If false (default), use round-robin scheduler.
@@ -175,7 +177,6 @@ int thread_get_load_avg (void);
 
 void do_iret (struct intr_frame *tf);
 bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
-// void reorder_lock_priority();
 int get_highest_lock_priority(struct thread *t);
 void ready_list_sort(void);
 

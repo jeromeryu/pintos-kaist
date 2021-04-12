@@ -96,8 +96,6 @@ process_fork (const char *name, struct intr_frame *if_) {
 	ih->thread = thread_current();
 	ih->if_ = if_;
 
-	// return thread_create (name,
-	// 		PRI_DEFAULT, __do_fork, thread_current ());
 	sema_init(&thread_current()->fork_sema,0);
 	
 	tid_t tid = thread_create (name, PRI_DEFAULT, __do_fork, ih);
@@ -207,15 +205,11 @@ __do_fork (void *aux) {
 		} else {
 			struct file *f = file_duplicate(parent->fd[i]);
 			if(f == NULL){
-				// sema_up(&parent->fork_sema);
-				// parent->recent_child_tid = TID_ERROR;
-				// break;				
 			}
 			current->fd[i] = f;
 		}
 	}
 	lock_release(&file_lock);
-
 
 	/* Finally, switch to the newly created process. */
 	if (succ){
@@ -261,7 +255,6 @@ process_exec (void *f_name) {
 	NOT_REACHED ();
 }
 
-
 /* Waits for thread TID to die and returns its exit status.  If
  * it was terminated by the kernel (i.e. killed due to an
  * exception), returns -1.  If TID is invalid or if it was not a
@@ -286,14 +279,13 @@ process_wait (tid_t child_tid) {
 	for(e = list_begin(&t->child_list); e != list_end(&t->child_list); e = list_next(e)){
 		struct thread *iter_thread = list_entry(e, struct thread, child_elem);
 		if(iter_thread->tid==child_tid){
-			// printf("child is alive %d\n", child_tid);
 			child = iter_thread;
 			break;
 		}
 	}
 
 	if(child==NULL){
-		for(int i=0; i<32; i++){
+		for(int i=0; i<NUM_DEAD/2; i++){
 			if(t->dead_child_status[i*2]==child_tid){
 				tid_t es = t->dead_child_status[i*2+1];
 				t->dead_child_status[i*2] = -1;
@@ -307,12 +299,10 @@ process_wait (tid_t child_tid) {
 		return -1;
 	}
 
-	// struct list_elem child_le = child->child_elem;
-	// sema_down(&t->exit_sema);
 	sema_down(&child->exit_sema);
 
 	tid_t es = TID_ERROR;
-	for(int i=0; i<32; i++){
+	for(int i=0; i<NUM_DEAD/2; i++){
 		if(t->dead_child_status[i*2]==child_tid){
 			es = t->dead_child_status[i*2+1];
 			t->dead_child_status[i*2] = -1;
@@ -320,8 +310,6 @@ process_wait (tid_t child_tid) {
 			break;
 		}
 	}
-	// tid_t exit_status = child->exit_status;
-	// list_remove(&child->status_elem);
 
 	return es;
 }
@@ -336,11 +324,9 @@ process_exit (void) {
 	 * TODO: project2/process_termination.html).
 	 * TODO: We recommend you to implement process resource cleanup here. */
 
-	// sema_down(&curr->wait_sema);
 	if(curr->is_process){
 		printf("%s: exit(%d)\n", curr->name, curr->exit_status);
 	}
-
 
 	if(curr->fd!=NULL){
 		for(int i=2; i<128; i++){
@@ -353,9 +339,7 @@ process_exit (void) {
 		palloc_free_page(curr->fd);
 	}
 
-
-	// sema_up(&curr->parent->exit_sema);
-	for(int i=0; i<32; i++){
+	for(int i=0; i<NUM_DEAD/2; i++){
 		if(curr->parent->dead_child_status[i*2]==-1){
 			curr->parent->dead_child_status[i*2] = curr->tid;
 			curr->parent->dead_child_status[i*2+1] = curr->exit_status;
@@ -365,8 +349,6 @@ process_exit (void) {
 
 	sema_up(&curr->exit_sema);
 	list_remove(&curr->child_elem);
-
-
 
 	process_cleanup ();
 }
@@ -576,8 +558,9 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* TODO: Your code goes here.
 	 * TODO: Implement argument passing (see project2/argument_passing.html). */
 
-	char *arr[100];
-	uintptr_t ptrs[100];
+	char **arr = malloc(100 * sizeof(char*));
+	uintptr_t **ptrs = malloc(100 * sizeof(uintptr_t *));
+
 	int idx = 0;
 	char *ret;
 	ret = strtok_r(full_file_name, " ", &next);
@@ -591,7 +574,6 @@ load (const char *file_name, struct intr_frame *if_) {
 	int k=0;
 	for(int j=idx; j>0; j--){
 		int len = strlen(arr[j-1])+1;
-		// printf("len %d\n", len);
 		if_->rsp -= len;
 		strlcpy((char *)if_->rsp, arr[j-1], len); 
 		ptrs[k] = if_->rsp;
@@ -616,6 +598,9 @@ load (const char *file_name, struct intr_frame *if_) {
 	*(char *)if_->rsp = 0; //fake return addr
 
 	success = true;
+
+	free(arr);
+	free(ptrs);
 
 done:
 	/* We arrive here whether the load is successful or not. */
