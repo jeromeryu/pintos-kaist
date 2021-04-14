@@ -30,12 +30,12 @@ main (int argc UNUSED, char *argv[] UNUSED) {
 
   CHECK ((fd1 = open ("sample.txt")) > -1, "open \"sample.txt\"");
   CHECK ((fd2 = open ("sample.txt")) > -1, "open \"sample.txt\"");
-
   buffer = get_boundary_area () - sizeof sample / 2;
 
   byte_cnt += read (fd1, buffer + byte_cnt, 10);
 
   seek (fd2, 10);
+
   byte_cnt += read (fd2, buffer + byte_cnt, 10);
 
   CHECK (dup2 (fd2, fd3) > 1, "first dup2()");
@@ -46,6 +46,7 @@ main (int argc UNUSED, char *argv[] UNUSED) {
   byte_cnt += (read (fd1, buffer + 15, 30) - 15);
 
   dup2 (dup2 (fd3, fd3), dup2 (fd1, fd2));
+  
   seek (fd2, tell (fd1));
   
   byte_cnt += read (fd2, buffer + byte_cnt, 17 + 2 * dup2 (fd4, fd1));

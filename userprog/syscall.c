@@ -10,6 +10,8 @@
 #include "userprog/process.h"
 #include "threads/palloc.h"
 #include <string.h>
+#include "filesys/file.h"
+
 
 void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
@@ -20,7 +22,7 @@ int read(int fd, void* buffer, unsigned size);
 unsigned tell (int fd);
 int seek(int fd, unsigned position);
 tid_t fork(const char *name, struct intr_frame *if_);
-
+int dup2(int oldfd, int newfd);
 
 /* System call.
  *
@@ -190,7 +192,11 @@ int filesize(int fd){
 }
 
 int write(int fd, const void* buffer, unsigned size){
-	if(fd<=0 || fd >= 128){
+	if(fd<0 || fd >= NUM_MAX_FILE){
+		return -1;
+	}
+
+	if(thread_current()->fd[fd] == (struct file*)1){
 		return -1;
 	}
 
@@ -212,7 +218,7 @@ int write(int fd, const void* buffer, unsigned size){
 
 	int res; 
 
-	if(fd==1){
+	if(thread_current()->fd[fd] == (struct file*)2){
 		putbuf(buffer, size);
 	} else {
 		lock_acquire(&file_lock);
@@ -224,7 +230,10 @@ int write(int fd, const void* buffer, unsigned size){
 }
 
 int read(int fd, void* buffer, unsigned size){
-	if(fd<0 || fd >= 128 || fd==1){
+	if(fd<0 || fd >= NUM_MAX_FILE){
+		return -1;
+	}
+	if(thread_current()->fd[fd] == (struct file*)2){
 		return -1;
 	}
 
@@ -247,7 +256,7 @@ int read(int fd, void* buffer, unsigned size){
 	int res; 
 
 	int i = 0;
-	if(fd==0){
+	if(thread_current()->fd[fd] == (struct file *)1){  
 		while (i < size){
 			*((uint8_t *)buffer + i) = input_getc();
 			i++;
@@ -266,7 +275,11 @@ unsigned tell (int fd){
 		return -1;
 	}
 
-	if(fd<=1 || fd >= 128){
+	if(thread_current()->fd[fd] == (struct file *)1 || thread_current()->fd[fd] == (struct file *)2){  
+		return -1;
+	}
+	
+	if(fd >= NUM_MAX_FILE){
 		return -1;
 	}
 
@@ -282,7 +295,12 @@ int seek(int fd, unsigned position){
 		return -1;
 	}
 
-	if(fd<=1 || fd >= 128){
+	if(thread_current()->fd[fd] == (struct file *)1 || thread_current()->fd[fd] == (struct file *)2){  
+		return -1;
+
+	}
+	
+	if(fd >= NUM_MAX_FILE){
 		return -1;
 	}
 
@@ -294,14 +312,23 @@ int seek(int fd, unsigned position){
 }
 
 void close(int fd){
-	if(fd >= 128){
+	if(fd >= NUM_MAX_FILE){
 		return;
 	}
+
+
 	lock_acquire(&file_lock);
-	if(thread_current()->fd[fd] != NULL){
-		file_allow_write(thread_current()->fd[fd]);
+
+	if(thread_current()->fd[fd] != (struct file *)1 && thread_current()->fd[fd] != (struct file *)2){
+		if(thread_current()->fd[fd] != NULL){
+			// file_allow_write(thread_current()->fd[fd]);
+		}
+
+		if(is_duped(fd)<0){
+			file_close(thread_current()->fd[fd]);
+		}
+
 	}
-	file_close(thread_current()->fd[fd]);
 	lock_release(&file_lock);
 	thread_current()->fd[fd] = NULL;
 }
@@ -309,6 +336,37 @@ void close(int fd){
 tid_t fork(const char *name, struct intr_frame *if_){
 	return process_fork(name, if_);
 }
+
+int dup2(int oldfd, int newfd){
+	if(oldfd<0 || newfd<0){
+		return -1;
+	}
+	if((thread_current()->fd)[oldfd]==NULL){
+		return -1;
+	}
+
+	if(oldfd >= NUM_MAX_FILE || newfd >= NUM_MAX_FILE){
+		return -1;
+	}
+	if(oldfd==newfd){
+		return newfd;
+	}
+
+	lock_acquire(&file_lock);
+
+	if(thread_current()->fd[newfd] != NULL){
+		//duplicated file should not be closed -> file allow write causes problem
+		if(is_duped(newfd) < 0){
+			file_close(thread_current()->fd[newfd]);
+		}
+	}
+	thread_current()->fd[newfd] = thread_current()->fd[oldfd];
+
+	lock_release(&file_lock);
+
+	return newfd;
+}
+
 
 /* The main system call interface */
 void
@@ -384,9 +442,11 @@ syscall_handler (struct intr_frame *f) {
 	case SYS_CLOSE:
 		close((int)(f->R.rdi));
 		break;
+	case SYS_DUP2:
+		res = dup2(f->R.rdi, f->R.rsi);
+		f->R.rax = res;
+		break;
 	default:
 		break;
 	}
-
-	// thread_exit ();
 }

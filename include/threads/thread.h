@@ -33,6 +33,7 @@ typedef int tid_t;
 #define PRI_MAX 63                      /* Highest priority. */
 
 #define NUM_DEAD 32
+#define NUM_MAX_FILE 512
 
 /* A kernel thread or user process.
  *
@@ -179,5 +180,7 @@ void do_iret (struct intr_frame *tf);
 bool compare_thread_priority(const struct list_elem *a, const struct list_elem *b, void *aux);
 int get_highest_lock_priority(struct thread *t);
 void ready_list_sort(void);
+
+int is_duped(int fd);
 
 #endif /* threads/thread.h */

@@ -199,14 +199,29 @@ __do_fork (void *aux) {
 	lock_acquire(&file_lock);
 	current->fd[0] = (struct file *)1;
 	current->fd[1] = (struct file *)2;
-	for(int i=2; i<128; i++){
+	for(int i=0; i<NUM_MAX_FILE; i++){
 		if(parent->fd[i] == NULL){
 			current->fd[i]=NULL;
 		} else {
-			struct file *f = file_duplicate(parent->fd[i]);
-			if(f == NULL){
+			if(parent->fd[i]==(struct file*)1 ){
+				current->fd[i] = (struct file*)1;
+			} else if(parent->fd[i]==(struct file*)2){
+				current->fd[i] = (struct file*)2;
+			} else {
+
+				bool dup = false;
+				for(int j=0; j<i; j++){
+					if(parent->fd[i]==parent->fd[j]){
+						dup = true;
+						current->fd[i] = current->fd[j];
+						break;
+					}
+				}
+				if(!dup){
+					struct file *f = file_duplicate(parent->fd[i]);
+					current->fd[i] = f;
+				}
 			}
-			current->fd[i] = f;
 		}
 	}
 	lock_release(&file_lock);
@@ -329,11 +344,21 @@ process_exit (void) {
 	}
 
 	if(curr->fd!=NULL){
-		for(int i=2; i<128; i++){
+		for(int i=0; i<NUM_MAX_FILE; i++){
 			if(curr->fd[i]!=NULL){
-				lock_acquire(&file_lock);
-				file_close(curr->fd[i]);
-				lock_release(&file_lock);
+				if(curr->fd[i]==(struct file*)1 ){
+					curr->fd[i] = NULL;
+				} else if(curr->fd[i]==(struct file*)2){
+					curr->fd[i] = NULL;
+				} else {
+					lock_acquire(&file_lock);
+					if(is_duped(i)<0){
+						file_close(curr->fd[i]);
+					} else {
+						curr->fd[i] = NULL;
+					}
+					lock_release(&file_lock);
+				}
 			}
 		}
 		palloc_free_page(curr->fd);
@@ -550,7 +575,6 @@ load (const char *file_name, struct intr_frame *if_) {
 	/* Set up stack. */
 	if (!setup_stack (if_))
 		goto done;
-
 
 	/* Start address. */
 	if_->rip = ehdr.e_entry;

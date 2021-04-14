@@ -267,7 +267,7 @@ thread_create (const char *name, int priority,
 	tid = t->tid = allocate_tid ();
 
 	t->fd = fd;
-	memset(t->fd, 0, 128 * sizeof(struct file*));
+	memset(t->fd, 0, NUM_MAX_FILE * sizeof(struct file*));
 	t->fd[0] = (struct file *)1; //input
 	t->fd[1] = (struct file *)2; //output
 
@@ -790,4 +790,20 @@ int check_pri(int pri){
 	} else {
 		return pri;
 	}
+}
+
+int is_duped(int fd){
+	if(thread_current()->fd[fd] == NULL){
+		return -1;
+	}
+
+	for(int i=0; i<NUM_MAX_FILE; i++){
+		if(i != fd){
+			if(thread_current()->fd[fd] == thread_current()->fd[i]){
+				return i;
+			}
+		}
+	}
+
+	return -1;
 }

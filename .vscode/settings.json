@@ -10,5 +10,5 @@
         "filesys.h": "c",
         "thread.h": "c"
     },
-    "C_Cpp.default.compilerArgs": ["-DUSERPROG"]
+    "C_Cpp.default.compilerArgs": ["-DUSERPROG", "-DFILESYS", "-DEXTRA2"]
 }
