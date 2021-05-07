@@ -3,6 +3,7 @@
 #include "threads/malloc.h"
 #include "vm/vm.h"
 #include "vm/inspect.h"
+#include "threads/mmu.h"
 
 /* Initializes the virtual memory subsystem by invoking each subsystem's
  * intialize codes. */
@@ -45,6 +46,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		vm_initializer *init, void *aux) {
 
 	ASSERT (VM_TYPE(type) != VM_UNINIT)
+	printf("vm_alloc_page_with_initializer\n");
 
 	struct supplemental_page_table *spt = &thread_current ()->spt;
 
@@ -55,6 +57,21 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		 * TODO: should modify the field after calling the uninit_new. */
 
 		/* TODO: Insert the page into the spt. */
+
+		struct page *page = (struct page *)malloc(sizeof(struct page));
+		page->va = upage;
+		bool *init_func;
+		if(VM_TYPE(type)==VM_ANON){
+			printf("ano initializer 1\n");
+			init_func = anon_initializer;
+		} else if(VM_TYPE(type)==VM_FILE){
+			printf("file initializer 1\n");
+			init_func = file_backed_initializer;
+		}
+
+		uninit_new(page, upage, init, type, aux, init_func);
+		return spt_insert_page(spt, page);
+
 	}
 err:
 	return false;
@@ -62,19 +79,30 @@ err:
 
 /* Find VA from spt and return page. On error, return NULL. */
 struct page *
-spt_find_page (struct supplemental_page_table *spt UNUSED, void *va UNUSED) {
-	struct page *page = NULL;
+spt_find_page (struct supplemental_page_table *spt, void *va) {
+	// struct page *page = NULL;
 	/* TODO: Fill this function. */
 
-	return page;
+	struct list_elem *e;
+	for(e = list_begin(&spt->page_list); e!= list_end(&spt->page_list); e = list_next(e)){
+		struct page *p = list_entry(e, struct page, page_elem);
+		if(p->va==va){
+			return p;
+		}
+	}
+
+	return NULL;
 }
 
 /* Insert PAGE into spt with validation. */
 bool
-spt_insert_page (struct supplemental_page_table *spt UNUSED,
-		struct page *page UNUSED) {
-	int succ = false;
+spt_insert_page (struct supplemental_page_table *spt,
+		struct page *page ) {
+	int succ = true;
 	/* TODO: Fill this function. */
+
+	// list_insert(&spt->page_list, &page->page_elem);
+	list_push_back(&spt->page_list, &page->page_elem);
 
 	return succ;
 }
@@ -113,6 +141,16 @@ vm_get_frame (void) {
 	struct frame *frame = NULL;
 	/* TODO: Fill this function. */
 
+	void * p = palloc_get_page(PAL_USER);
+	if(p == NULL){
+		PANIC("TODO");
+		// vm_evict_frame();
+	} else {
+		frame = (struct frame *)malloc(sizeof(struct frame));
+		frame->kva = p;
+	}
+	frame->page = NULL;
+
 	ASSERT (frame != NULL);
 	ASSERT (frame->page == NULL);
 	return frame;
@@ -130,12 +168,17 @@ vm_handle_wp (struct page *page UNUSED) {
 
 /* Return true on success */
 bool
-vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr UNUSED,
+vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
 	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
+
+	page = spt_find_page(spt, pg_round_down(addr)); 
+	if(page == NULL){
+		return false;
+	}
 
 	return vm_do_claim_page (page);
 }
@@ -153,6 +196,7 @@ bool
 vm_claim_page (void *va UNUSED) {
 	struct page *page = NULL;
 	/* TODO: Fill this function */
+	page = spt_find_page(&thread_current()->spt, va);
 
 	return vm_do_claim_page (page);
 }
@@ -168,12 +212,19 @@ vm_do_claim_page (struct page *page) {
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
 
+	bool done = pml4_set_page(thread_current()->pml4, page->va, frame->kva, page->writable);
+
+	if(!done){
+		return false;
+	}
+
 	return swap_in (page, frame->kva);
 }
 
 /* Initialize new supplemental page table */
 void
-supplemental_page_table_init (struct supplemental_page_table *spt UNUSED) {
+supplemental_page_table_init (struct supplemental_page_table *spt) {
+	list_init(&spt->page_list);
 }
 
 /* Copy supplemental page table from src to dst */

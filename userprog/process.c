@@ -262,6 +262,7 @@ process_exec (void *f_name) {
 	palloc_free_page (file_name);
 
 	if (!success){
+		printf("process exec fail\n");
 		return -1;
 	}
 
@@ -544,6 +545,7 @@ load (const char *file_name, struct intr_frame *if_) {
 			case PT_SHLIB:
 				goto done;
 			case PT_LOAD:
+				printf("load\n");
 				if (validate_segment (&phdr, file)) {
 					bool writable = (phdr.p_flags & PF_W) != 0;
 					uint64_t file_page = phdr.p_offset & ~PGMASK;
@@ -563,8 +565,11 @@ load (const char *file_name, struct intr_frame *if_) {
 						zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
 					}
 					if (!load_segment (file, file_page, (void *) mem_page,
-								read_bytes, zero_bytes, writable))
+								read_bytes, zero_bytes, writable)){
+						printf("load segment fail\n");
 						goto done;
+
+					}
 				}
 				else
 					goto done;
@@ -785,6 +790,36 @@ lazy_load_segment (struct page *page, void *aux) {
 	/* TODO: Load the segment from the file */
 	/* TODO: This called when the first page fault occurs on address VA. */
 	/* TODO: VA is available when calling this function. */
+
+	printf("lazy load segment\n");
+	struct segment_info *info = (struct segment_info*)aux;
+	struct file *file = info->file;
+	size_t page_read_bytes = info->page_read_bytes;
+	size_t page_zero_bytes = info->page_zero_bytes;
+	uint8_t * upage = info->upage;
+
+
+	/* Load this page. */
+	// if (file_read (file, page, page_read_bytes) != (int) page_read_bytes) {
+	// 	palloc_free_page (page);
+	// 	return false;
+	// }
+	printf("%d\n", (int)page_read_bytes);
+	lock_acquire(&file_lock);
+	int a = file_read_at (file, upage, page_read_bytes, info->ofs);
+	lock_release(&file_lock);
+	printf("%d\n", a);
+	if (a != (int) page_read_bytes) {
+		palloc_free_page (upage);
+		return false;
+	}
+
+
+	memset (upage + page_read_bytes, 0, page_zero_bytes);
+
+
+	return true;
+
 }
 
 /* Loads a segment starting at offset OFS in FILE at address
@@ -807,7 +842,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 	ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
 	ASSERT (pg_ofs (upage) == 0);
 	ASSERT (ofs % PGSIZE == 0);
-
+	printf("load segment\n");
 	while (read_bytes > 0 || zero_bytes > 0) {
 		/* Do calculate how to fill this page.
 		 * We will read PAGE_READ_BYTES bytes from FILE
@@ -817,6 +852,18 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		void *aux = NULL;
+		
+		struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
+		info->file = file;
+		info->ofs = ofs;
+		info->upage = upage;
+		info->read_bytes = read_bytes;
+		info->zero_bytes = zero_bytes;
+		info->writable = writable;
+		info->page_read_bytes = page_read_bytes;
+		info->page_zero_bytes = page_zero_bytes;
+		aux = (void *)info;
+
 		if (!vm_alloc_page_with_initializer (VM_ANON, upage,
 					writable, lazy_load_segment, aux))
 			return false;
@@ -839,6 +886,18 @@ setup_stack (struct intr_frame *if_) {
 	 * TODO: If success, set the rsp accordingly.
 	 * TODO: You should mark the page is stack. */
 	/* TODO: Your code goes here */
+
+	success = vm_alloc_page(VM_ANON, stack_bottom, true);
+	if(!success){
+		return false;
+	}
+	success = vm_claim_page(stack_bottom);
+	if(success){
+		if_->rsp = USER_STACK;
+	} else {
+		palloc_free_page (stack_bottom);
+	}
+
 
 	return success;
 }

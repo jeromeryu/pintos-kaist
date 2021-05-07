@@ -1,0 +1,14 @@
+FAIL
+Kernel panic in run: PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
+Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d23e 0x80042227a3 0x8004222619 0x80042224ca 0x800421d9d7 0x8004209468 0x8004209886
+Translation of call stack:
+0x0000008004218683: debug_panic (lib/kernel/debug.c:32)
+0x000000800420be2e: palloc_free_multiple (threads/palloc.c:316)
+0x000000800420bf24: palloc_free_page (threads/palloc.c:329)
+0x000000800421d23e: lazy_load_segment (userprog/process.c:814)
+0x00000080042227a3: uninit_initialize (vm/uninit.c:55 (discriminator 4))
+0x0000008004222619: vm_do_claim_page (vm/vm.c:219)
+0x00000080042224ca: vm_try_handle_fault (vm/vm.c:181)
+0x000000800421d9d7: page_fault (userprog/exception.c:145)
+0x0000008004209468: intr_handler (threads/interrupt.c:352)
+0x0000008004209886: intr_entry (threads/intr-stubs.o:?)

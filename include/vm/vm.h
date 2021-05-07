@@ -1,6 +1,7 @@
 #ifndef VM_VM_H
 #define VM_VM_H
 #include <stdbool.h>
+#include <hash.h>
 #include "threads/palloc.h"
 
 enum vm_type {
@@ -46,6 +47,8 @@ struct page {
 	struct frame *frame;   /* Back reference for frame */
 
 	/* Your implementation */
+	struct list_elem page_elem;
+	bool writable;
 
 	/* Per-type data are binded into the union.
 	 * Each function automatically detects the current union */
@@ -57,6 +60,17 @@ struct page {
 		struct page_cache page_cache;
 #endif
 	};
+};
+
+struct segment_info {
+	struct file *file;
+	off_t ofs;
+	uint8_t *upage;
+	uint32_t read_bytes; 
+	uint32_t zero_bytes; 
+	bool writable;
+	size_t page_read_bytes;
+	size_t page_zero_bytes;
 };
 
 /* The representation of "frame" */
@@ -85,6 +99,7 @@ struct page_operations {
  * We don't want to force you to obey any specific design for this struct.
  * All designs up to you for this. */
 struct supplemental_page_table {
+	struct list page_list;
 };
 
 #include "threads/thread.h"
