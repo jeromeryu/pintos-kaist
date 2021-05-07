@@ -4,7 +4,7 @@ Kernel command line: -q -f put open-boundary put sample.txt run open-boundary
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  52,377,600 loops/s.
+Calibrating timer...  215,040,000 loops/s.
 hd0:0: detected 337 sector (168 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 107 sector (53 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -14,60 +14,18 @@ Boot complete.
 Putting 'open-boundary' into the file system...
 Putting 'sample.txt' into the file system...
 Executing 'open-boundary':
-load open-boundary
-load
-check 0x400000
-load segment 19802 678
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-load
-check 0x604000
-load segment 0 16384
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-stack bot 0x4747f000
-vm_alloc_page_with_initializer
-ano initializer 1
-claim page va 0x4747f000 kva 0x8004a21000 
-uninit initialize
-anon_init
-suc
-stack done
-succc 1
-doiret
-claim page va 0x400000 kva 0x8004a22000 
-uninit initialize
-file_backed_init
-lazy load segment
-19802
-4096
-0x400000
-0x800423f038 0x8004a22000
-0
-Kernel PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
-Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d33e 0x80042229a5 0x8004222805 0x8004222689 0x800421db5e 0x8004209468.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 115 ticks
-Thread: 33 idle ticks, 57 kernel ticks, 25 user ticks
+(open-boundary) begin
+(open-boundary) open "sample.txt"
+(open-boundary) end
+open-boundary: exit(0)
+Execution of 'open-boundary' complete.
+Timer: 75 ticks
+Thread: 33 idle ticks, 40 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 68 reads, 252 writes
+hd0:1: 112 reads, 252 writes
 hd1:0: 107 reads, 0 writes
 hd1:1: 0 reads, 0 writes
-Console: 2186 characters output
-Key
+Console: 1074 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

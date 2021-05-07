@@ -23,7 +23,7 @@ vm_file_init (void) {
 bool
 file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
-	printf("file_backed_init\n");
+	// printf("file_backed_init\n");
 	page->operations = &file_ops;
 
 	struct file_page *file_page = &page->file;
@@ -33,7 +33,7 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the file. */
 static bool
 file_backed_swap_in (struct page *page, void *kva) {
-	printf("file_back_swap_in\n");
+	// printf("file_back_swap_in\n");
 	struct file_page *file_page UNUSED = &page->file;
 	return true;
 }

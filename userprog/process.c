@@ -256,7 +256,7 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	lock_acquire(&file_lock);
-	printf("load %s\n", file_name);
+	// printf("load %s\n", file_name);
 	success = load (file_name, &_if);
 	lock_release(&file_lock);
 	/* If load failed, quit. */
@@ -268,7 +268,7 @@ process_exec (void *f_name) {
 	}
 
 	/* Start switched process. */
-	printf("doiret\n");
+	// printf("doiret\n");
 	do_iret (&_if);
 	NOT_REACHED ();
 }
@@ -547,7 +547,7 @@ load (const char *file_name, struct intr_frame *if_) {
 			case PT_SHLIB:
 				goto done;
 			case PT_LOAD:
-				printf("load\n");
+				// printf("load\n");
 				if (validate_segment (&phdr, file)) {
 					bool writable = (phdr.p_flags & PF_W) != 0;
 					uint64_t file_page = phdr.p_offset & ~PGMASK;
@@ -566,10 +566,10 @@ load (const char *file_name, struct intr_frame *if_) {
 						read_bytes = 0;
 						zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
 					}
-					printf("check %p\n", mem_page);
+					// printf("check %p\n", mem_page);
 					if (!load_segment (file, file_page, (void *) mem_page,
 								read_bytes, zero_bytes, writable)){
-						printf("load segment fail\n");
+						// printf("load segment fail\n");
 						goto done;
 
 					}
@@ -584,7 +584,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	if (!setup_stack (if_))
 		goto done;
 
-	printf("stack done\n");
+	// printf("stack done\n");
 	/* Start address. */
 	if_->rip = ehdr.e_entry;
 
@@ -636,12 +636,12 @@ load (const char *file_name, struct intr_frame *if_) {
 	free(ptrs);
 done:
 	/* We arrive here whether the load is successful or not. */
-	printf("close file\n");
+	// printf("close file\n");
 	if(!success){
 		file_close (file);
 	}
 
-	printf("succc %d\n", success);
+	// printf("succc %d\n", success);
 	return success;
 }
 
@@ -799,7 +799,7 @@ lazy_load_segment (struct page *page, void *aux) {
 	/* TODO: This called when the first page fault occurs on address VA. */
 	/* TODO: VA is available when calling this function. */
 
-	printf("lazy load segment %p\n", page);
+	// printf("lazy load segment %p\n", page);
 	struct segment_info *info = (struct segment_info*)aux;
 	struct file *file = info->file;
 	size_t page_read_bytes = info->page_read_bytes;
@@ -815,18 +815,18 @@ lazy_load_segment (struct page *page, void *aux) {
 
 
 
-	printf("%d\n", info->read_bytes);
-	printf("%d\n", (int)page_read_bytes);
-	printf("%p\n", upage);
-	lock_acquire(&file_lock);
+	// printf("%d\n", info->read_bytes);
+	// printf("%d\n", (int)page_read_bytes);
+	// printf("%p\n", upage);
+	// lock_acquire(&file_lock);
 	int a = file_read_at (file, upage, page_read_bytes, info->ofs);
-	printf("file %p\n", file);
-	printf("file2 %p\n", file);
+	// printf("file %p\n", file);
+	// printf("file2 %p\n", file);
 	// int a = file_read(file, upage, page_read_bytes);
-	lock_release(&file_lock);
-	printf("%p %p %p\n",page->va, page->frame, page->frame->kva);
+	// lock_release(&file_lock);
+	// printf("%p %p %p\n",page->va, page->frame, page->frame->kva);
 
-	printf("%d\n", a);
+	// printf("%d\n", a);
 	if (a != (int) page_read_bytes) {
 		palloc_free_page (upage);
 		return false;
@@ -860,7 +860,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 	ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
 	ASSERT (pg_ofs (upage) == 0);
 	ASSERT (ofs % PGSIZE == 0);
-	printf("load segment %d %d\n", read_bytes, zero_bytes);
+	// printf("load segment %d %d\n", read_bytes, zero_bytes);
 	while (read_bytes > 0 || zero_bytes > 0) {
 		/* Do calculate how to fill this page.
 		 * We will read PAGE_READ_BYTES bytes from FILE
@@ -907,7 +907,7 @@ static bool
 setup_stack (struct intr_frame *if_) {
 	bool success = false;
 	void *stack_bottom = (void *) (((uint8_t *) USER_STACK) - PGSIZE);
-	printf("stack bot %p\n", stack_bottom);
+	// printf("stack bot %p\n", stack_bottom);
 	/* TODO: Map the stack on stack_bottom and claim the page immediately.
 	 * TODO: If success, set the rsp accordingly.
 	 * TODO: You should mark the page is stack. */
@@ -919,10 +919,10 @@ setup_stack (struct intr_frame *if_) {
 	}
 	success = vm_claim_page(stack_bottom);
 	if(success){
-		printf("suc\n");
+		// printf("suc\n");
 		if_->rsp = USER_STACK;
 	} else {
-		printf("fail\n");
+		// printf("fail\n");
 		palloc_free_page (stack_bottom);
 	}
 

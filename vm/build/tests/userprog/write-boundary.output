@@ -4,7 +4,7 @@ Kernel command line: -q -f put write-boundary put sample.txt run write-boundary
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  52,377,600 loops/s.
+Calibrating timer...  209,510,400 loops/s.
 hd0:0: detected 337 sector (168 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 109 sector (54 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -14,60 +14,18 @@ Boot complete.
 Putting 'write-boundary' into the file system...
 Putting 'sample.txt' into the file system...
 Executing 'write-boundary':
-load write-boundary
-load
-check 0x400000
-load segment 19930 550
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-load
-check 0x604000
-load segment 3926 12458
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-stack bot 0x4747f000
-vm_alloc_page_with_initializer
-ano initializer 1
-claim page va 0x4747f000 kva 0x8004a21000 
-uninit initialize
-anon_init
-suc
-stack done
-succc 1
-doiret
-claim page va 0x400000 kva 0x8004a22000 
-uninit initialize
-file_backed_init
-lazy load segment
-19930
-4096
-0x400000
-0x800423f038 0x8004a22000
-0
-Kernel PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
-Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d33e 0x80042229a5 0x8004222805 0x8004222689 0x800421db5e 0x8004209468.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 103 ticks
-Thread: 35 idle ticks, 46 kernel ticks, 22 user ticks
+(write-boundary) begin
+(write-boundary) open "sample.txt"
+(write-boundary) end
+write-boundary: exit(0)
+Execution of 'write-boundary' complete.
+Timer: 73 ticks
+Thread: 38 idle ticks, 32 kernel ticks, 3 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 68 reads, 256 writes
+hd0:1: 121 reads, 257 writes
 hd1:0: 109 reads, 0 writes
 hd1:1: 0 reads, 0 writes
-Console: 2195 characters output
-Key
+Console: 1083 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

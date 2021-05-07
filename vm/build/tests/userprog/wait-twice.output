@@ -4,7 +4,7 @@ Kernel command line: -q -f put wait-twice put child-simple run wait-twice
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  52,377,600 loops/s.
+Calibrating timer...  209,510,400 loops/s.
 hd0:0: detected 337 sector (168 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 204 sector (102 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -14,56 +14,19 @@ Boot complete.
 Putting 'wait-twice' into the file system...
 Putting 'child-simple' into the file system...
 Executing 'wait-twice':
-load wait-twice
-load
-check 0x400000
-load segment 19642 838
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-load
-check 0x604000
-load segment 0 8192
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-stack bot 0x4747f000
-vm_alloc_page_with_initializer
-ano initializer 1
-claim page va 0x4747f000 kva 0x8004a21000 
-uninit initialize
-anon_init
-suc
-stack done
-succc 1
-doiret
-claim page va 0x400000 kva 0x8004a22000 
-uninit initialize
-file_backed_init
-lazy load segment
-19642
-4096
-0x400000
-0x800423f038 0x8004a22000
-0
-Kernel PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
-Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d33e 0x80042229a5 0x8004222805 0x8004222689 0x800421db5e 0x8004209468.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 106 ticks
-Thread: 31 idle ticks, 54 kernel ticks, 21 user ticks
+(wait-twice) begin
+(wait-twice) wait(exec()) = -1
+(wait-twice) wait(exec()) = -1
+(wait-twice) end
+wait-twice: exit(0)
+Execution of 'wait-twice' complete.
+Timer: 65 ticks
+Thread: 30 idle ticks, 32 kernel ticks, 3 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 68 reads, 446 writes
+hd0:1: 107 reads, 446 writes
 hd1:0: 204 reads, 0 writes
 hd1:1: 0 reads, 0 writes
-Console: 2077 characters output
-Key
+Console: 1083 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

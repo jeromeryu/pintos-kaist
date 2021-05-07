@@ -4,7 +4,7 @@ Kernel command line: -q -f put multi-recurse run 'multi-recurse 15'
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  52,428,800 loops/s.
+Calibrating timer...  209,510,400 loops/s.
 hd0:0: detected 337 sector (168 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 113 sector (56 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -13,61 +13,18 @@ Formatting file system...done.
 Boot complete.
 Putting 'multi-recurse' into the file system...
 Executing 'multi-recurse 15':
-load multi-recurse 15
-load
-check 0x400000
-load segment 21626 2950
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-load
-check 0x605000
-load segment 1160 2936
-vm_alloc_page_with_initializer
-file initializer 1
-stack bot 0x4747f000
-vm_alloc_page_with_initializer
-ano initializer 1
-claim page va 0x4747f000 kva 0x8004a21000 
-uninit initialize
-anon_init
-suc
-stack done
-succc 1
-doiret
-claim page va 0x400000 kva 0x8004a22000 
-uninit initialize
-file_backed_init
-lazy load segment
-21626
-4096
-0x400000
-0x800423f038 0x8004a22000
-0
-Kernel PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
-Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d33e 0x80042229a5 0x8004222805 0x8004222689 0x800421db5e 0x8004209468 0x8004209886Interrupt 0x0d (#GP General Protection Exception) at rip=80042156bd
- cr2=0000000000400cc1 error=               0
-rax 0000800424200000 rbx 0000000000400000 rcx 00000080040b8000 rdx 00000000000003d4
-rsp 0000008004243cc0 rbp 0000008004243cd0 rsi 000000000000bd0f rdi 0000000000000000
-rip 00000080042156bd r8 0000008004243bd8  r9 000000800421bafc r10 0000000000000000
-r11 0000000000000000 r12 0000008004a22000 r13 0000000000000000 r14 0000000000000000
-r15 0000800420988600 rflags 00000006
-es: 0010 ds: 0010 cs: 0008 ss: 0010
-Kernel PANIC recursion at ../../userprog/exception.c:97 in kill().
-Timer: 125 ticks
-Thread: 34 idle ticks, 59 kernel ticks, 32 user ticks
+(multi-recurse) begin 15
+(multi-recurse) exec("multi-recurse 14")
+(multi-recurse) fork() returned -1: FAILED
+multi-recurse: exit(1)
+Execution of 'multi-recurse' complete.
+Timer: 64 ticks
+Thread: 31 idle ticks, 31 kernel ticks, 2 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 41 reads, 254 writes
+hd0:1: 87 reads, 254 writes
 hd1:0: 113 reads, 0 writes
 hd1:1: 0 reads, 0 writes
-Console: 2489 characters output
-Key
+Console: 1054 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...

@@ -4,7 +4,7 @@ Kernel command line: -q -f put args-many run 'args-many a b c d e f g h i j k l 
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  78,540,800 loops/s.
+Calibrating timer...  235,520,000 loops/s.
 hd0:0: detected 337 sector (168 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 102 sector (51 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -13,56 +13,42 @@ Formatting file system...done.
 Boot complete.
 Putting 'args-many' into the file system...
 Executing 'args-many a b c d e f g h i j k l m n o p q r s t u v':
-load args-many a b c d e f g h i j k l m n o p q r s t u v
-load
-check 0x400000
-load segment 19738 742
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-vm_alloc_page_with_initializer
-file initializer 1
-load
-check 0x604000
-load segment 0 8192
-vm_alloc_page_with_initializer
-ano initializer 1
-vm_alloc_page_with_initializer
-ano initializer 1
-stack bot 0x4747f000
-vm_alloc_page_with_initializer
-ano initializer 1
-claim page va 0x4747f000 kva 0x8004a21000 
-uninit initialize
-anon_init
-suc
-stack done
-succc 1
-doiret
-claim page va 0x400000 kva 0x8004a22000 
-uninit initialize
-file_backed_init
-lazy load segment
-19738
-4096
-0x400000
-0x800423f038 0x8004a22000
-0
-Kernel PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
-Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d33e 0x80042229a5 0x8004222805 0x8004222689 0x800421db5e 0x8004209468.
-The `backtrace' program can make call stacks useful.
-Read "Backtraces" in the "Debugging Tools" chapter
-of the Pintos documentation for more information.
-Timer: 107 ticks
-Thread: 41 idle ticks, 50 kernel ticks, 16 user ticks
+(args) begin
+(args) argc = 23
+(args) argv[0] = 'args-many'
+(args) argv[1] = 'a'
+(args) argv[2] = 'b'
+(args) argv[3] = 'c'
+(args) argv[4] = 'd'
+(args) argv[5] = 'e'
+(args) argv[6] = 'f'
+(args) argv[7] = 'g'
+(args) argv[8] = 'h'
+(args) argv[9] = 'i'
+(args) argv[10] = 'j'
+(args) argv[11] = 'k'
+(args) argv[12] = 'l'
+(args) argv[13] = 'm'
+(args) argv[14] = 'n'
+(args) argv[15] = 'o'
+(args) argv[16] = 'p'
+(args) argv[17] = 'q'
+(args) argv[18] = 'r'
+(args) argv[19] = 's'
+(args) argv[20] = 't'
+(args) argv[21] = 'u'
+(args) argv[22] = 'v'
+(args) argv[23] = null
+(args) end
+args-many: exit(0)
+Execution of 'args-many' complete.
+Timer: 78 ticks
+Thread: 33 idle ticks, 39 kernel ticks, 6 user ticks
 hd0:0: 0 reads, 0 writes
-hd0:1: 41 reads, 232 writes
+hd0:1: 80 reads, 232 writes
 hd1:0: 102 reads, 0 writes
 hd1:1: 0 reads, 0 writes
-Console: 2141 characters output
-Key
+Console: 1571 characters output
+Keyboard: 0 keys pressed
+Exception: 0 page faults
+Powering off...
