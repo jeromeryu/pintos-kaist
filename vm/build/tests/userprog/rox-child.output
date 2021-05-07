@@ -4,7 +4,7 @@ Kernel command line: -q -f put rox-child put child-rox run rox-child
 Pintos booting with: 
 	base_mem: 0x0 ~ 0x9fc00 (Usable: 639 kB)
 	ext_mem: 0x100000 ~ 0x13e0000 (Usable: 19,328 kB)
-Calibrating timer...  78,336,000 loops/s.
+Calibrating timer...  26,188,800 loops/s.
 hd0:0: detected 337 sector (168 kB) disk, model "QEMU HARDDISK", serial "QM00001"
 hd0:1: detected 20,160 sector (9 MB) disk, model "QEMU HARDDISK", serial "QM00002"
 hd1:0: detected 220 sector (110 kB) disk, model "QEMU HARDDISK", serial "QM00003"
@@ -14,40 +14,56 @@ Boot complete.
 Putting 'rox-child' into the file system...
 Putting 'child-rox' into the file system...
 Executing 'rox-child':
+load rox-child
 load
-load segment
-here
+check 0x400000
+load segment 20202 278
 vm_alloc_page_with_initializer
-here
+file initializer 1
 vm_alloc_page_with_initializer
-here
+file initializer 1
 vm_alloc_page_with_initializer
-here
+file initializer 1
 vm_alloc_page_with_initializer
-here
+file initializer 1
 vm_alloc_page_with_initializer
+file initializer 1
 load
-load segment
-here
+check 0x604000
+load segment 0 8192
 vm_alloc_page_with_initializer
-here
+ano initializer 1
 vm_alloc_page_with_initializer
+ano initializer 1
+stack bot 0x4747f000
 vm_alloc_page_with_initializer
+ano initializer 1
+claim page va 0x4747f000 kva 0x8004a21000 
+uninit initialize
 anon_init
-anon_init
+suc
+stack done
+succc 1
+doiret
+claim page va 0x400000 kva 0x8004a22000 
+uninit initialize
+file_backed_init
 lazy load segment
+20202
 4096
+0x400000
+0x800423f038 0x8004a22000
 0
 Kernel PANIC at ../../threads/palloc.c:314 in palloc_free_multiple(): executed an unreachable statement
-Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d23e 0x80042227a3 0x8004222619 0x80042224ca 0x800421d9d7 0x8004209468.
+Call stack: 0x8004218683 0x800420be2e 0x800420bf24 0x800421d33e 0x80042229a5 0x8004222805 0x8004222689 0x800421db5e 0x8004209468.
 The `backtrace' program can make call stacks useful.
 Read "Backtraces" in the "Debugging Tools" chapter
 of the Pintos documentation for more information.
-Timer: 82 ticks
-Thread: 30 idle ticks, 44 kernel ticks, 8 user ticks
+Timer: 158 ticks
+Thread: 66 idle ticks, 62 kernel ticks, 30 user ticks
 hd0:0: 0 reads, 0 writes
 hd0:1: 68 reads, 478 writes
 hd1:0: 220 reads, 0 writes
 hd1:1: 0 reads, 0 writes
-Console: 1669 characters output
+Console: 2066 characters output
 Key

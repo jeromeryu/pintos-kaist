@@ -59,7 +59,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		/* TODO: Insert the page into the spt. */
 
 		struct page *page = (struct page *)malloc(sizeof(struct page));
-		page->va = upage;
+		// page->va = upage;
 		bool *init_func;
 		if(VM_TYPE(type)==VM_ANON){
 			printf("ano initializer 1\n");
@@ -82,7 +82,7 @@ struct page *
 spt_find_page (struct supplemental_page_table *spt, void *va) {
 	// struct page *page = NULL;
 	/* TODO: Fill this function. */
-
+	printf("find va %p\n", va);
 	struct list_elem *e;
 	for(e = list_begin(&spt->page_list); e!= list_end(&spt->page_list); e = list_next(e)){
 		struct page *p = list_entry(e, struct page, page_elem);
@@ -102,6 +102,7 @@ spt_insert_page (struct supplemental_page_table *spt,
 	/* TODO: Fill this function. */
 
 	// list_insert(&spt->page_list, &page->page_elem);
+	printf("insert %p\n", page->va);
 	list_push_back(&spt->page_list, &page->page_elem);
 
 	return succ;
@@ -175,6 +176,7 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
 
+	printf("try handle fault %p\n",pg_round_down(addr) );
 	page = spt_find_page(spt, pg_round_down(addr)); 
 	if(page == NULL){
 		return false;
@@ -193,10 +195,11 @@ vm_dealloc_page (struct page *page) {
 
 /* Claim the page that allocate on VA. */
 bool
-vm_claim_page (void *va UNUSED) {
+vm_claim_page (void *va) {
 	struct page *page = NULL;
 	/* TODO: Fill this function */
 	page = spt_find_page(&thread_current()->spt, va);
+	printf("claim pave %p %p \n", page->va, va);
 
 	return vm_do_claim_page (page);
 }
@@ -211,7 +214,7 @@ vm_do_claim_page (struct page *page) {
 	page->frame = frame;
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
-
+	printf("claim page va %p kva %p \n", page->va, frame->kva);
 	bool done = pml4_set_page(thread_current()->pml4, page->va, frame->kva, page->writable);
 
 	if(!done){
