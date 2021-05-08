@@ -124,6 +124,7 @@ struct thread {
 #ifdef VM
 	/* Table for whole virtual memory owned by thread. */
 	struct supplemental_page_table spt;
+	bool spt_init;
 #endif
 
 	/* Owned by thread.c. */

@@ -178,8 +178,9 @@ __do_fork (void *aux) {
 	process_activate (current);
 #ifdef VM
 	supplemental_page_table_init (&current->spt);
-	if (!supplemental_page_table_copy (&current->spt, &parent->spt))
+	if (!supplemental_page_table_copy (&current->spt, &parent->spt)){
 		goto error;
+	}
 #else
 	if (!pml4_for_each (parent->pml4, duplicate_pte, parent))
 		goto error;
@@ -263,7 +264,6 @@ process_exec (void *f_name) {
 	palloc_free_page (file_name);
 
 	if (!success){
-		printf("process exec fail\n");
 		return -1;
 	}
 
@@ -387,7 +387,10 @@ process_cleanup (void) {
 	struct thread *curr = thread_current ();
 
 #ifdef VM
-	supplemental_page_table_kill (&curr->spt);
+	if(curr->spt_init){
+		// printf("kill\n");
+		supplemental_page_table_kill (&curr->spt);
+	}
 #endif
 
 	uint64_t *pml4;
@@ -799,13 +802,13 @@ lazy_load_segment (struct page *page, void *aux) {
 	/* TODO: This called when the first page fault occurs on address VA. */
 	/* TODO: VA is available when calling this function. */
 
-	// printf("lazy load segment %p\n", page);
 	struct segment_info *info = (struct segment_info*)aux;
 	struct file *file = info->file;
 	size_t page_read_bytes = info->page_read_bytes;
 	size_t page_zero_bytes = info->page_zero_bytes;
 	uint8_t * upage = info->upage;
 
+	// printf("lazy load segment %p\n", upage);
 
 	/* Load this page. */
 	// if (file_read (file, page, page_read_bytes) != (int) page_read_bytes) {
@@ -817,6 +820,7 @@ lazy_load_segment (struct page *page, void *aux) {
 
 	// printf("%d\n", info->read_bytes);
 	// printf("%d\n", (int)page_read_bytes);
+	// printf("zero %d\n", page_zero_bytes);
 	// printf("%p\n", upage);
 	// lock_acquire(&file_lock);
 	int a = file_read_at (file, upage, page_read_bytes, info->ofs);
@@ -832,9 +836,10 @@ lazy_load_segment (struct page *page, void *aux) {
 		return false;
 	}
 
-
+	// printf("here\n");
 	memset (upage + page_read_bytes, 0, page_zero_bytes);
 
+	// printf("here2\n");
 
 	return true;
 
@@ -867,7 +872,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		 * and zero the final PAGE_ZERO_BYTES bytes. */
 		size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
 		size_t page_zero_bytes = PGSIZE - page_read_bytes;
-
+		// printf("load read zero byte %d %d\n", page_read_bytes, page_zero_bytes);
 		/* TODO: Set up aux to pass information to the lazy_load_segment. */
 		void *aux = NULL;
 		

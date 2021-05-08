@@ -538,6 +538,11 @@ init_thread (struct thread *t, const char *name, int priority) {
 		t->dead_child_status[i] = -1;
 	}
 
+#ifdef VM
+	t->spt_init = false;
+#endif
+
+
 	if (t != initial_thread){
 		struct thread *parent = thread_current();
 		t->parent = parent;

@@ -4,6 +4,7 @@
 #include "vm/vm.h"
 #include "vm/inspect.h"
 #include "threads/mmu.h"
+#include "userprog/process.h"
 
 /* Initializes the virtual memory subsystem by invoking each subsystem's
  * intialize codes. */
@@ -65,7 +66,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 			// printf("ano initializer 1\n");
 			init_func = anon_initializer;
 		} else if(VM_TYPE(type)==VM_FILE){
-			// printf("file initializer 1\n");
+			// printf("file initializer 1");
 			init_func = file_backed_initializer;
 		}
 
@@ -103,7 +104,7 @@ spt_insert_page (struct supplemental_page_table *spt,
 	/* TODO: Fill this function. */
 
 	// list_insert(&spt->page_list, &page->page_elem);
-	// printf("insert %p\n", page->va);
+	// printf("insert %p\n", page);
 	list_push_back(&spt->page_list, &page->page_elem);
 
 	return succ;
@@ -172,12 +173,12 @@ vm_handle_wp (struct page *page UNUSED) {
 bool
 vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
-	struct supplemental_page_table *spt UNUSED = &thread_current ()->spt;
+	struct supplemental_page_table *spt = &thread_current ()->spt;
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
 
-	// printf("try handle fault %p\n",pg_round_down(addr) );
+	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
 	page = spt_find_page(spt, pg_round_down(addr)); 
 	if(page == NULL){
 		return false;
@@ -221,25 +222,125 @@ vm_do_claim_page (struct page *page) {
 	if(!done){
 		return false;
 	}
-
-	return swap_in (page, frame->kva);
+	bool ret = swap_in (page, frame->kva);
+	return ret;
 }
 
 /* Initialize new supplemental page table */
 void
 supplemental_page_table_init (struct supplemental_page_table *spt) {
 	list_init(&spt->page_list);
+	// printf("init!!\n");
+	thread_current()->spt_init = true;
 }
 
 /* Copy supplemental page table from src to dst */
 bool
-supplemental_page_table_copy (struct supplemental_page_table *dst UNUSED,
-		struct supplemental_page_table *src UNUSED) {
+supplemental_page_table_copy (struct supplemental_page_table *dst ,
+		struct supplemental_page_table *src ) {
+	// printf("copy\n");
+	struct list_elem *e;
+	for(e = list_begin(&src->page_list); e != list_end(&src->page_list); e = list_next(e)){
+		struct page *page = list_entry(e, struct page, page_elem);
+		// enum vm_type type = page_get_type(page);
+		enum vm_type type = page->operations->type;
+		// printf("isequal %d\n", type==type1);
+		if(type==VM_UNINIT){
+			// printf("uninit\n");
+			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
+			struct segment_info *src_info = (struct segment_info*)page->uninit.aux;
+			info->file = src_info->file;
+			info->ofs = src_info->ofs;
+			info->upage = src_info->upage;
+			info->read_bytes = src_info->read_bytes;
+			info->zero_bytes = src_info->zero_bytes;
+			info->writable = src_info->writable;
+			info->page_read_bytes = src_info->page_read_bytes;
+			info->page_zero_bytes = src_info->page_zero_bytes;
+			void * aux = (void*) info;
+
+			if(info->page_read_bytes == 0){
+				if (!vm_alloc_page_with_initializer (VM_ANON, info->upage,
+					info->writable, page->uninit.init, aux)){
+					return false;
+				}
+			} else {
+				if (!vm_alloc_page_with_initializer(VM_FILE, info->upage,
+					info->writable, page->uninit.init, aux)){
+					return false;
+				}
+			}
+			
+
+		} else if(type==VM_ANON){
+			// printf("anon\n");
+
+			bool success = vm_alloc_page(VM_ANON, page->va, true);
+			if(!success){
+				return false;
+			}
+			success = vm_claim_page(page->va);
+			if(!success){
+				palloc_free_page (page->va);
+				return false;
+			}
+
+			struct page *newpage = spt_find_page(dst, page->va);
+
+			memcpy(newpage->frame->kva, page->frame->kva, PGSIZE);
+
+		} else if(type==VM_FILE){
+			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
+			struct segment_info *src_info = (struct segment_info*)page->uninit.aux;
+			// printf("file!!!!! %p %p\n", page->frame, src_info->upage);
+			info->file = src_info->file;
+			info->ofs = src_info->ofs;
+			info->upage = src_info->upage;
+			info->read_bytes = src_info->read_bytes;
+			info->zero_bytes = src_info->zero_bytes;
+			info->writable = src_info->writable;
+			info->page_read_bytes = src_info->page_read_bytes;
+			info->page_zero_bytes = src_info->page_zero_bytes;
+			void * aux = (void*) info;
+			struct vm_initializer *init = page->uninit.init;
+			if (!vm_alloc_page_with_initializer(VM_FILE, info->upage,
+				info->writable, init, aux)){
+
+				return false;
+			}
+			// printf("here 222 %p %d %d\n", info->upage, info->writable, page->writable);
+			struct page *newpage = spt_find_page(dst, page->va);
+			// printf("checkpoint1\n");
+			bool success = vm_claim_page(info->upage);
+			// printf("checkpoint2\n");
+
+			newpage->writable = page->writable;
+			// printf("checkpoint3  %p, %p\n", newpage->frame, page->frame);
+
+			memcpy(newpage->frame->kva, page->frame->kva, PGSIZE);
+
+			// printf("done file!!!!\n");
+		}
+
+	}
+	return true;
+
 }
 
 /* Free the resource hold by the supplemental page table */
 void
-supplemental_page_table_kill (struct supplemental_page_table *spt UNUSED) {
+supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	/* TODO: Destroy all the supplemental_page_table hold by thread and
 	 * TODO: writeback all the modified contents to the storage. */
+
+	// for(e = list_begin(&src->page_list); e != list_end(&src->page_list); e = list_next(e)){
+	// 	struct page *page = list_entry(e, struct page, page_elem);
+
+	struct list_elem *e;
+	for(e = list_begin(&spt->page_list); e != list_end(&spt->page_list); ){
+		struct page *page = list_entry(e, struct page, page_elem);
+		destroy(page);
+		e = list_next(e);
+		free(page);
+	}
 }
