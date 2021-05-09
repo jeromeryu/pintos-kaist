@@ -171,6 +171,8 @@ vm_get_frame (void) {
 /* Growing the stack. */
 static void
 vm_stack_growth (void *addr UNUSED) {
+	vm_alloc_page(VM_ANON, pg_round_down(addr), true);
+	vm_claim_page(pg_round_down(addr));
 }
 
 /* Handle the fault on write_protected page */
@@ -186,10 +188,32 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
 	/* TODO: Your code goes here */
+	uintptr_t userstackpointer;
+
+	// printf("user stack %p\n", USER_STACK);
+	// printf("fault address %p\n", addr);
+	// printf("current stack pointer %p\n", f->rsp);
+	// printf("stack minimum1 %p\n", USER_STACK - 1024 * PGSIZE);
+	// printf("stack minimum2 %p\n", USER_STACK - 256 * PGSIZE);
+	// printf("onsyscall %d\n", thread_current()->on_syscall);
+
 
 	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
 	page = spt_find_page(spt, pg_round_down(addr)); 
 	if(page == NULL){
+		if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE){
+			if (thread_current()->on_syscall){
+				userstackpointer = thread_current()->user_rsp;
+			}else{
+				userstackpointer = f->rsp;
+			}
+			if (addr >= USER_STACK - 256 * PGSIZE && addr > userstackpointer - PGSIZE){
+				vm_stack_growth(addr);
+				return true;
+			}else{
+				exit(-1);
+			}
+		}
 		return false;
 	}
 

@@ -376,6 +376,10 @@ syscall_handler (struct intr_frame *f) {
 	int res, fd;
 	bool tf;
 	tid_t tid;
+	struct thread *t = thread_current();
+	t->on_syscall = true;
+	t->user_rsp = f->rsp;
+	// printf("syscall rsp : %p\n", f->rsp);
 
 	switch (f->R.rax)
 	{
@@ -449,4 +453,5 @@ syscall_handler (struct intr_frame *f) {
 	default:
 		break;
 	}
+	t->on_syscall = false;
 }

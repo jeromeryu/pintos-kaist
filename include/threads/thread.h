@@ -139,6 +139,8 @@ struct thread {
 	int recent_child_tid;
 
 	int dead_child_status[NUM_DEAD];
+	bool on_syscall;
+	uintptr_t user_rsp;
 
 	unsigned magic;                     /* Detects stack overflow. */
 

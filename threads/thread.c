@@ -533,6 +533,8 @@ init_thread (struct thread *t, const char *name, int priority) {
 	t->exit_status = -1;
 	t->is_process = false;
 	t->recent_child_tid = 0;
+	t->on_syscall = false;
+	t->user_rsp = 0x0;
 
 	for(int i=0; i<NUM_DEAD; i++){
 		t->dead_child_status[i] = -1;
