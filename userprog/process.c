@@ -268,7 +268,6 @@ process_exec (void *f_name) {
 	}
 
 	/* Start switched process. */
-	// printf("doiret\n");
 	do_iret (&_if);
 	NOT_REACHED ();
 }
@@ -596,12 +595,13 @@ load (const char *file_name, struct intr_frame *if_) {
 
 	char **arr = malloc(100 * sizeof(char*));
 	uintptr_t **ptrs = malloc(100 * sizeof(uintptr_t *));
-
+	printf("here1\n");
 	int idx = 0;
 	char *ret;
 	ret = strtok_r(full_file_name, " ", &next);
 	while(ret){
 		arr[idx] = ret;
+		printf("ret %s\n", ret);
 		ret = strtok_r(NULL, " ", &next);
 		idx ++;
 	}
@@ -644,7 +644,7 @@ done:
 		file_close (file);
 	}
 
-	// printf("succc %d\n", success);
+	printf("succc %d\n", success);
 	return success;
 }
 

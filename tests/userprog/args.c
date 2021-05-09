@@ -17,11 +17,15 @@ main (int argc, char *argv[])
 
   msg ("begin");
   msg ("argc = %d", argc);
-  for (i = 0; i <= argc; i++)
+  for (i = 0; i <= argc; i++){
+
+    msg(argv[i]);
+    msg("asdf");
     if (argv[i] != NULL)
       msg ("argv[%d] = '%s'", i, argv[i]);
     else
       msg ("argv[%d] = null", i);
+  }
   msg ("end");
 
   return 0;

@@ -52,6 +52,8 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 	struct supplemental_page_table *spt = &thread_current ()->spt;
 
 	/* Check wheter the upage is already occupied or not. */
+	// printf("alloc page with initializer %p %p\n", spt, upage);
+	// printf("len spt %d\n", list_size(&spt->page_list));
 	if (spt_find_page (spt, upage) == NULL) {
 		/* TODO: Create the page, fetch the initialier according to the VM type,
 		 * TODO: and then create "uninit" page struct by calling uninit_new. You
@@ -86,8 +88,15 @@ spt_find_page (struct supplemental_page_table *spt, void *va) {
 	/* TODO: Fill this function. */
 	// printf("find va %p\n", va);
 	struct list_elem *e;
+	// printf("spt_find_page");
+	// printf("tid %d\n", thread_current()->tid);
 	for(e = list_begin(&spt->page_list); e!= list_end(&spt->page_list); e = list_next(e)){
+		// printf("hi1\n");
+		// printf("%p\n", e);
+		// printf("%p\n", e->next);
 		struct page *p = list_entry(e, struct page, page_elem);
+		// printf("%p\n", p->va);
+		// printf("hi2\n");
 		if(p->va==va){
 			return p;
 		}
@@ -230,7 +239,8 @@ vm_do_claim_page (struct page *page) {
 void
 supplemental_page_table_init (struct supplemental_page_table *spt) {
 	list_init(&spt->page_list);
-	// printf("init!!\n");
+	// printf("init tid %d\n", thread_current()->tid);
+
 	thread_current()->spt_init = true;
 }
 
@@ -335,12 +345,14 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 
 	// for(e = list_begin(&src->page_list); e != list_end(&src->page_list); e = list_next(e)){
 	// 	struct page *page = list_entry(e, struct page, page_elem);
-
+	// printf("kill\n");
+	// printf("kill tid %d\n", thread_current()->tid);
 	struct list_elem *e;
-	for(e = list_begin(&spt->page_list); e != list_end(&spt->page_list); ){
+	for(e = list_begin(&spt->page_list); e != list_end(&spt->page_list); e = list_remove(e)){
 		struct page *page = list_entry(e, struct page, page_elem);
+		// printf("destroy page %p\n", page->va);
 		destroy(page);
-		e = list_next(e);
-		free(page);
+
+		// free(page);
 	}
 }
