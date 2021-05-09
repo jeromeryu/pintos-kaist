@@ -622,7 +622,7 @@ load (const char *file_name, struct intr_frame *if_) {
 	}
 
 	if_->rsp -= 8;
-	*(char *)(if_->rsp) = 0;
+	*(uintptr_t *)(if_->rsp) = 0;
 	
 	for(int j=0; j<k; j++){
 		if_->rsp-=8;
