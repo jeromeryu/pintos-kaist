@@ -170,7 +170,8 @@ vm_get_frame (void) {
 
 /* Growing the stack. */
 static void
-vm_stack_growth (void *addr UNUSED) {
+vm_stack_growth (void *addr) {
+	// printf("grow stack %p\n", pg_round_down(addr));
 	vm_alloc_page(VM_ANON, pg_round_down(addr), true);
 	vm_claim_page(pg_round_down(addr));
 }
@@ -200,6 +201,11 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 
 	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
 	page = spt_find_page(spt, pg_round_down(addr)); 
+
+		// struct thread *t = thread_current();
+		// printf("t       %p\n", &t);
+		// printf("t end   %p\n", &t +sizeof(struct thread));
+		// printf("rsp     %p\n", t->tf.rsp);
 	if(page == NULL){
 		if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE){
 			if (thread_current()->on_syscall){
@@ -256,6 +262,7 @@ vm_do_claim_page (struct page *page) {
 		return false;
 	}
 	bool ret = swap_in (page, frame->kva);
+	// printf("done %d\n", ret);
 	return ret;
 }
 
@@ -291,6 +298,7 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			info->writable = src_info->writable;
 			info->page_read_bytes = src_info->page_read_bytes;
 			info->page_zero_bytes = src_info->page_zero_bytes;
+			info->type = src_info->type;
 			void * aux = (void*) info;
 
 			if(info->page_read_bytes == 0){
@@ -335,6 +343,7 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			info->writable = src_info->writable;
 			info->page_read_bytes = src_info->page_read_bytes;
 			info->page_zero_bytes = src_info->page_zero_bytes;
+			info->type = src_info->type;
 			void * aux = (void*) info;
 			struct vm_initializer *init = page->uninit.init;
 			if (!vm_alloc_page_with_initializer(VM_FILE, info->upage,

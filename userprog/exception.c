@@ -142,6 +142,11 @@ page_fault (struct intr_frame *f) {
 
 #ifdef VM
 	/* For project 3 and later. */
+		// printf ("Page fault at %p: %s error %s page in %s context.\n",
+		// 	fault_addr,
+		// 	not_present ? "not present" : "rights violation",
+		// 	write ? "writing" : "reading",
+		// 	user ? "user" : "kernel");
 	if (vm_try_handle_fault (f, fault_addr, user, write, not_present))
 		return;
 #endif

@@ -17,8 +17,8 @@ void syscall_entry (void);
 void syscall_handler (struct intr_frame *);
 void halt(void);
 void exit(int status);
-int write(int fd, const void* buffer, unsigned size);
-int read(int fd, void* buffer, unsigned size);
+int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size);
+int read(uintptr_t user_rsp, int fd, void* buffer, unsigned size);
 unsigned tell (int fd);
 int seek(int fd, unsigned position);
 tid_t fork(const char *name, struct intr_frame *if_);
@@ -191,7 +191,7 @@ int filesize(int fd){
 	return -1;
 }
 
-int write(int fd, const void* buffer, unsigned size){
+int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
 	if(fd<0 || fd >= NUM_MAX_FILE){
 		return -1;
 	}
@@ -216,6 +216,23 @@ int write(int fd, const void* buffer, unsigned size){
 		exit(-1);
 	}
 
+#ifdef VM
+	// if(page==NULL || page->writable == false){
+	// 	exit(-1);
+	// }
+	if(buffer < pg_round_down(user_rsp)){
+		struct page *page = spt_find_page(&thread_current()->spt, pg_round_down(buffer));
+		// printf("write %p\n", pg_round_down(buffer));
+		// printf("%d\n", page==NULL);
+		if(page == NULL || page->writable == false){
+			// printf("write %p\n", pg_round_down(buffer));
+			
+			exit(-1);
+		}
+	}
+#endif
+
+
 	int res; 
 
 	if(thread_current()->fd[fd] == (struct file*)2){
@@ -229,7 +246,7 @@ int write(int fd, const void* buffer, unsigned size){
 	return size;
 }
 
-int read(int fd, void* buffer, unsigned size){
+int read(uintptr_t user_rsp, int fd, void* buffer, unsigned size){
 	if(fd<0 || fd >= NUM_MAX_FILE){
 		return -1;
 	}
@@ -252,6 +269,24 @@ int read(int fd, void* buffer, unsigned size){
 	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
 		exit(-1);
 	}
+
+#ifdef VM
+		// printf("read %p\n", pg_round_down(buffer));
+		// printf("USER_STACK %p\n", USER_STACK);
+
+	if(buffer < pg_round_down(user_rsp)){
+		struct page *page = spt_find_page(&thread_current()->spt, pg_round_down(buffer));
+		// printf("read %p\n", pg_round_down(buffer));
+		if(page==NULL){
+			// printf("read %p\n", pg_round_down(buffer));
+			
+			exit(-1);
+		}
+		if(page->writable==false){
+			exit(-1);
+		}
+	}
+#endif
 
 	int res; 
 
@@ -297,7 +332,6 @@ int seek(int fd, unsigned position){
 
 	if(thread_current()->fd[fd] == (struct file *)1 || thread_current()->fd[fd] == (struct file *)2){  
 		return -1;
-
 	}
 	
 	if(fd >= NUM_MAX_FILE){
@@ -367,6 +401,30 @@ int dup2(int oldfd, int newfd){
 	return newfd;
 }
 
+void *mmap (void *addr, size_t length, int writable, int fd, off_t offset){
+	if(addr==NULL || addr==0){
+		return NULL;
+	}
+
+	if(fd >= NUM_MAX_FILE || fd < 0){
+		return NULL;
+	}
+
+	struct file *file = thread_current()->fd[fd];
+	lock_acquire(&file_lock);
+	off_t size = file_length(file);
+
+	if(size<=0 || length<=0 || file == (struct file *)1 || file == (struct file *)2){
+		lock_release(&file_lock);
+		return NULL;
+	}
+
+	struct file *file2 = file_reopen(file);
+	void *page = do_mmap(addr, length, writable, file2, offset);
+	lock_release(&file_lock);
+	return page;
+
+}
 
 /* The main system call interface */
 void
@@ -422,12 +480,13 @@ syscall_handler (struct intr_frame *f) {
 		f->R.rax = fd;
 		break;
 	case SYS_READ:
-		res = read((int)(f->R.rdi), (void* )f->R.rsi, f->R.rdx);
+		// printf("user rsp %p\n", t->user_rsp);
+		res = read(t->user_rsp, (int)(f->R.rdi), (void* )f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
 		f->R.rax = res;
 		break;
 	case SYS_WRITE:
-		res = write((int)(f->R.rdi), (void* )f->R.rsi, f->R.rdx);
+		res = write(t->user_rsp, (int)(f->R.rdi), (void* )f->R.rsi, f->R.rdx);
 		thread_current()->tf.R.rax = res;
 		f->R.rax = res;
 		break;
@@ -449,6 +508,14 @@ syscall_handler (struct intr_frame *f) {
 	case SYS_DUP2:
 		res = dup2(f->R.rdi, f->R.rsi);
 		f->R.rax = res;
+		break;
+	case SYS_MMAP:
+		// printf("mmap\n");
+		f->R.rax = mmap(f->R.rdi, f->R.rsi, f->R.rdx, f->R.r10, f->R.r8);
+		break;
+	case SYS_MUNMAP:
+		// printf("munmap\n");
+		do_munmap(f->R.rdi);
 		break;
 	default:
 		break;

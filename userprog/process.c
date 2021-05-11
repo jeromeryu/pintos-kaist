@@ -18,6 +18,7 @@
 #include "threads/mmu.h"
 #include "threads/vaddr.h"
 #include "intrinsic.h"
+#include "threads/malloc.h"
 #ifdef VM
 #include "vm/vm.h"
 #endif
@@ -476,9 +477,9 @@ struct ELF64_PHDR {
 
 static bool setup_stack (struct intr_frame *if_);
 static bool validate_segment (const struct Phdr *, struct file *);
-static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
+bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		uint32_t read_bytes, uint32_t zero_bytes,
-		bool writable);
+		bool writable, bool from_mmap);
 
 /* Loads an ELF executable from FILE_NAME into the current thread.
  * Stores the executable's entry point into *RIP
@@ -570,7 +571,7 @@ load (const char *file_name, struct intr_frame *if_) {
 					}
 					// printf("check %p\n", mem_page);
 					if (!load_segment (file, file_page, (void *) mem_page,
-								read_bytes, zero_bytes, writable)){
+								read_bytes, zero_bytes, writable, false)){
 						// printf("load segment fail\n");
 						goto done;
 
@@ -815,10 +816,10 @@ lazy_load_segment (struct page *page, void *aux) {
 
 
 
-	// printf("%d\n", info->read_bytes);
-	// printf("%d\n", (int)page_read_bytes);
-	// printf("zero %d\n", page_zero_bytes);
-	// printf("%p\n", upage);
+	// printf("rd     %d\n", info->read_bytes);
+	// printf("prd    %d\n", (int)page_read_bytes);
+	// printf("zero   %d\n", page_zero_bytes);
+	// printf("upage  %p\n", upage);
 	// lock_acquire(&file_lock);
 	int a = file_read_at (file, upage, page_read_bytes, info->ofs);
 	// printf("file %p\n", file);
@@ -827,7 +828,7 @@ lazy_load_segment (struct page *page, void *aux) {
 	// lock_release(&file_lock);
 	// printf("%p %p %p\n",page->va, page->frame, page->frame->kva);
 
-	// printf("%d\n", a);
+	// printf("read   %d\n", a);
 	if (a != (int) page_read_bytes) {
 		palloc_free_page (upage);
 		return false;
@@ -856,9 +857,9 @@ lazy_load_segment (struct page *page, void *aux) {
  *
  * Return true if successful, false if a memory allocation error
  * or disk read error occurs. */
-static bool
+bool
 load_segment (struct file *file, off_t ofs, uint8_t *upage,
-		uint32_t read_bytes, uint32_t zero_bytes, bool writable) {
+		uint32_t read_bytes, uint32_t zero_bytes, bool writable, bool from_mmap) {
 	ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
 	ASSERT (pg_ofs (upage) == 0);
 	ASSERT (ofs % PGSIZE == 0);
@@ -882,6 +883,11 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		info->writable = writable;
 		info->page_read_bytes = page_read_bytes;
 		info->page_zero_bytes = page_zero_bytes;
+		info->type = (page_read_bytes == 0) ? VM_ANON : VM_FILE;
+		if(from_mmap && info->type == VM_FILE && info->type & VM_MARKER_0 == 0){
+			//set mmaped file page marker => used in destroy to implicitly munmap
+			info->type += VM_MARKER_0;
+		}
 		aux = (void *)info;
 
 		if(page_read_bytes == 0){

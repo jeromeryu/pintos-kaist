@@ -17,4 +17,5 @@ userprog/process.o: ../../userprog/process.c \
  ../../include/filesys/filesys.h ../../include/threads/flags.h \
  ../../include/threads/init.h ../../include/threads/mmu.h \
  ../../include/threads/pte.h ../../include/threads/vaddr.h \
- ../../include/intrinsic.h ../../include/threads/mmu.h
+ ../../include/intrinsic.h ../../include/threads/mmu.h \
+ ../../include/threads/malloc.h

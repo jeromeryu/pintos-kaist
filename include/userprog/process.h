@@ -12,4 +12,6 @@ void process_activate (struct thread *next);
 
 struct lock file_lock;
 
+bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
+		uint32_t read_bytes, uint32_t zero_bytes, bool writable, bool from_mmap);
 #endif /* userprog/process.h */

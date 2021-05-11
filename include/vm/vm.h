@@ -71,6 +71,7 @@ struct segment_info {
 	bool writable;
 	size_t page_read_bytes;
 	size_t page_zero_bytes;
+	enum vm_type type;
 };
 
 /* The representation of "frame" */
