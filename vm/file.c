@@ -44,6 +44,7 @@ file_backed_swap_in (struct page *page, void *kva) {
 /* Swap out the page by writeback contents to the file. */
 static bool
 file_backed_swap_out (struct page *page) {
+	// printf("file swap out\n");
 	struct file_page *file_page UNUSED = &page->file;
 }
 
@@ -52,7 +53,9 @@ static void
 file_backed_destroy (struct page *page) {
 	struct file_page *file_page UNUSED = &page->file;
 	struct segment_info *info = (struct segment_info*)page->uninit.aux;
+	// printf("destroy %p\n", page);
 	if(info->type & VM_MARKER_0){
+		// printf("here\n");
 		do_munmap(page->va);
 	}
 }
@@ -74,10 +77,20 @@ do_mmap (void *addr, size_t length, int writable,
 	uint32_t read_bytes = 0;
 	uint32_t zero_bytes = 0;
 	int full_pages = length;
+	// printf("length %d\n", length);
 	if(length % PGSIZE != 0){
 		full_pages = (length / PGSIZE + 1) * PGSIZE;
 	}
 	int len_file = file_length(file);
+	if(len_file<length){
+		// printf("here");
+		if(len_file % PGSIZE != 0){
+			full_pages = (len_file / PGSIZE + 1) * PGSIZE;
+			// printf("full_page here!! %d\n", full_pages);
+		} else {
+			full_pages = length;
+		}
+	}
 	if(len_file < full_pages){
 		read_bytes = len_file;
 		zero_bytes = full_pages - len_file;
@@ -85,10 +98,11 @@ do_mmap (void *addr, size_t length, int writable,
 		read_bytes = length;
 		zero_bytes = full_pages - length;
 	}
-
+	// printf("full %d\n", full_pages);
 	// printf("full_page  %d\n", full_pages);
 	// printf("file_size  %d\n", len_file);
 	// printf("length     %d\n", length);
+	// printf("len file   %d\n", len_file);
 	// printf("read_bytes %d\n", read_bytes);
 	// printf("zero_bytes %d\n", zero_bytes);
 
@@ -112,11 +126,27 @@ do_munmap (void *addr) {
 	}
 
 	struct segment_info *info = (struct segment_info*)page->uninit.aux;
+	struct file *file = info->file;
+
 	if(pml4_is_dirty(thread_current()->pml4, addr)){
 		// printf("is dirty\n");
-		lock_acquire(&file_lock);
-		file_write_at(info->file, addr, info->page_read_bytes, info->ofs);
-		lock_release(&file_lock);
+		if(info->writable){
+			// printf("dounmap file %p\n", info->file);
+			lock_acquire(&file_lock);
+			file_write_at(info->file, addr, info->page_read_bytes, info->ofs);
+			lock_release(&file_lock);
+		}
+
+		// while(info->file == file){
+		// 	page = spt_find_page(&thread_current()->spt, addr);
+		// 	if(page==NULL){
+		// 		break;
+		// 	}	
+		// 	// printf("remove %p\n", addr);
+			// list_remove(&page->page_elem);
+			// spt_remove_page(&thread_current()->spt, page);
+		// 	addr += PGSIZE;
+		// }
 	}
 	return;
 }

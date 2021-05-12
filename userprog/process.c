@@ -884,10 +884,22 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 		info->page_read_bytes = page_read_bytes;
 		info->page_zero_bytes = page_zero_bytes;
 		info->type = (page_read_bytes == 0) ? VM_ANON : VM_FILE;
-		if(from_mmap && info->type == VM_FILE && info->type & VM_MARKER_0 == 0){
+		// printf("load_legment   %p\n", file);
+		// printf("prb %d\n", page_read_bytes);
+		// printf("pzb %d\n", page_zero_bytes);
+		// printf("rb  %d\n", read_bytes);
+		// printf("zb  %d\n", zero_bytes);
+		// printf("from_mmap      %d\n", from_mmap);
+		// printf("info type      %d\n", info->type);
+		// printf("info type &&&  %d\n", info->type & VM_MARKER_0);
+		// printf("bool           %d\n", (info->type & VM_MARKER_0) == false);
+		if(from_mmap && ((info->type & VM_MARKER_0) == false)){
 			//set mmaped file page marker => used in destroy to implicitly munmap
+			// printf("vm_marker\n");
 			info->type += VM_MARKER_0;
 		}
+		// printf("info type      %d\n", info->type);
+
 		aux = (void *)info;
 
 		if(page_read_bytes == 0){

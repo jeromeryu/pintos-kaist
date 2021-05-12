@@ -222,7 +222,7 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 		}
 		return false;
 	}
-
+	// printf("page not null\n");
 	return vm_do_claim_page (page);
 }
 
@@ -275,12 +275,16 @@ supplemental_page_table_init (struct supplemental_page_table *spt) {
 	thread_current()->spt_init = true;
 }
 
+
+
 /* Copy supplemental page table from src to dst */
 bool
 supplemental_page_table_copy (struct supplemental_page_table *dst ,
 		struct supplemental_page_table *src ) {
 	// printf("copy\n");
 	struct list_elem *e;
+	struct file *file_lst[8] = {NULL};
+	struct file *reopen_file_lst[8] = {NULL};
 	for(e = list_begin(&src->page_list); e != list_end(&src->page_list); e = list_next(e)){
 		struct page *page = list_entry(e, struct page, page_elem);
 		// enum vm_type type = page_get_type(page);
@@ -334,8 +338,33 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 		} else if(type==VM_FILE){
 			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
 			struct segment_info *src_info = (struct segment_info*)page->uninit.aux;
-			// printf("file!!!!! %p %p\n", page->frame, src_info->upage);
-			info->file = src_info->file;
+			// printf("file!!!!! %p %p\n", page->frame, src_info->file);
+			// info->file = src_info->file;
+			// info->file = file_reopen(src_info->file);
+
+			bool is_reopened = false;
+			for(int i=0; i<8; i++){
+				if(file_lst[i]==src_info->file && reopen_file_lst[i]!=NULL){
+					info->file = reopen_file_lst[i];
+					is_reopened = true;
+				} 
+			}
+			if(!is_reopened){
+				// printf("n\n");
+				for(int i=0; i<8; i++){
+					// printf("file_lst %p\n", file_lst[i]);
+					if(file_lst[i]==NULL){
+						// printf("here\n");
+						reopen_file_lst[i] = file_reopen(src_info->file);
+						info->file = reopen_file_lst[i];
+						file_lst[i] = info->file;
+						break;
+					}
+				}
+			}
+
+			// printf("file!!!!! %p\n", info->file);
+
 			info->ofs = src_info->ofs;
 			info->upage = src_info->upage;
 			info->read_bytes = src_info->read_bytes;

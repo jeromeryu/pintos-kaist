@@ -224,7 +224,8 @@ int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
 		struct page *page = spt_find_page(&thread_current()->spt, pg_round_down(buffer));
 		// printf("write %p\n", pg_round_down(buffer));
 		// printf("%d\n", page==NULL);
-		if(page == NULL || page->writable == false){
+		// printf("writable %d\n", page->writable);
+		if(page == NULL ){
 			// printf("write %p\n", pg_round_down(buffer));
 			
 			exit(-1);
@@ -406,15 +407,30 @@ void *mmap (void *addr, size_t length, int writable, int fd, off_t offset){
 		return NULL;
 	}
 
+	if(!is_user_vaddr(addr)){
+		return NULL;
+	}
+
+	int len = length;
+	if(len < 0){
+		return NULL;
+	}
+
 	if(fd >= NUM_MAX_FILE || fd < 0){
 		return NULL;
 	}
 
 	struct file *file = thread_current()->fd[fd];
 	lock_acquire(&file_lock);
+
+
+	if(thread_current()->fd[fd] == (struct file *)1 || thread_current()->fd[fd] == (struct file *)2){  
+		lock_release(&file_lock);
+		return NULL;
+	}
 	off_t size = file_length(file);
 
-	if(size<=0 || length<=0 || file == (struct file *)1 || file == (struct file *)2){
+	if(size<=0 || length<=0){
 		lock_release(&file_lock);
 		return NULL;
 	}
