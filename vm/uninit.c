@@ -52,6 +52,21 @@ uninit_initialize (struct page *page, void *kva) {
 	vm_initializer *init = uninit->init;
 	void *aux = uninit->aux;
 
+	// printf("reach here\n");
+
+	// uninit->page_initializer (page, uninit->type, kva);
+	// printf("reach here2\n");
+
+	// if(init ? init (page, aux) : true){
+	// 	printf("reach here3\n");
+	// }
+	// printf("init address %p\n", init);
+	// printf("aux address %p\n", aux);
+	// printf("page address %p\n", page);
+	// printf("page type %d\n", uninit->type);
+	// printf("kva address %p\n", kva);
+
+
 	/* TODO: You may need to fix this function. */
 	return uninit->page_initializer (page, uninit->type, kva) &&
 		(init ? init (page, aux) : true);

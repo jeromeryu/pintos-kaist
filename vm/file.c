@@ -27,9 +27,15 @@ bool
 file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
 	// printf("file_backed_init\n");
+
+	struct segment *info = page->uninit.aux;
 	page->operations = &file_ops;
 
 	struct file_page *file_page = &page->file;
+	file_page->info = info;
+
+	list_push_back(frame_list, &page->frame->frame_elem);
+	// printf("file_backed_init end\n");
 	return true;
 }
 
@@ -37,15 +43,25 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 static bool
 file_backed_swap_in (struct page *page, void *kva) {
 	// printf("file_back_swap_in\n");
-	struct file_page *file_page UNUSED = &page->file;
+	struct file_page *file_page = &page->file;
+	lock_acquire(&file_lock);
+	file_read_at(file_page->info->file, kva, file_page->info->page_read_bytes, file_page->info->ofs);
+	lock_release(&file_lock);
+	list_push_back(frame_list, &page->frame->frame_elem);
 	return true;
 }
 
 /* Swap out the page by writeback contents to the file. */
 static bool
 file_backed_swap_out (struct page *page) {
-	// printf("file swap out\n");
-	struct file_page *file_page UNUSED = &page->file;
+	struct file_page *file_page = &page->file;
+	do_munmap(page->va);
+	lock_acquire(&file_lock);
+	pml4_set_dirty(thread_current()->pml4, page->va, false);
+	pml4_clear_page(thread_current()->pml4, page->va);
+	lock_release(&file_lock);
+	return true;
+
 }
 
 /* Destory the file backed page. PAGE will be freed by the caller. */

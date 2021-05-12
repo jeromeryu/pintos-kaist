@@ -18,6 +18,8 @@ vm_init (void) {
 	register_inspect_intr ();
 	/* DO NOT MODIFY UPPER LINES. */
 	/* TODO: Your code goes here. */
+	frame_list = (struct list *)malloc(sizeof(struct list));
+	list_init(frame_list);
 }
 
 /* Get the type of the page. This function is useful if you want to know the
@@ -128,8 +130,10 @@ spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
 /* Get the struct frame, that will be evicted. */
 static struct frame *
 vm_get_victim (void) {
-	struct frame *victim = NULL;
+	struct frame *victim = list_entry(list_pop_front(frame_list), struct frame, frame_elem);
+	// printf("pop frame kva %p\n", victim->kva);
 	 /* TODO: The policy for eviction is up to you. */
+	swap_out(victim->page);
 
 	return victim;
 }
@@ -138,10 +142,28 @@ vm_get_victim (void) {
  * Return NULL on error.*/
 static struct frame *
 vm_evict_frame (void) {
-	struct frame *victim UNUSED = vm_get_victim ();
-	/* TODO: swap out the victim and return the evicted frame. */
+	struct frame *victim  = vm_get_victim ();
+	struct list_elem *e;
+	// struct supplemental_page_table *spt = &thread_current()->spt;
+	for(e = list_begin(frame_list); e != list_end(frame_list); e = list_next(e)){
+		struct frame * frame = list_entry(e, struct frame, frame_elem);
+		if (frame->kva != NULL){
+			if (frame->kva == victim->kva){
+				// list_remove(e);
+				swap_out(frame->page);
+			}
+		}
+	}
 
-	return NULL;
+	/* TODO: swap out the victim and return the evicted frame. */
+	// struct page *page = victim->page;
+	// printf("page address %p\n", page->frame->kva);
+	// printf("before swap_out\n");
+	// printf("page type : %d\n", page->operations->type);
+	// swap_out (page);
+	// printf("after swap out\n");
+
+	return victim;
 }
 
 /* palloc() and get frame. If there is no available page, evict the page
@@ -153,16 +175,22 @@ vm_get_frame (void) {
 	struct frame *frame = NULL;
 	/* TODO: Fill this function. */
 
+
 	void * p = palloc_get_page(PAL_USER);
+	// printf("physical memoty : %p\n", p);
 	if(p == NULL){
-		PANIC("TODO");
-		// vm_evict_frame();
+		// PANIC("TODO");
+		// printf("reach here\n");
+		frame = vm_evict_frame();
 	} else {
 		frame = (struct frame *)malloc(sizeof(struct frame));
 		frame->kva = p;
 	}
 	frame->page = NULL;
+	// list_push_back(&frame_list, &frame->frame_elem);
 
+
+	// printf("reach get frame\n");
 	ASSERT (frame != NULL);
 	ASSERT (frame->page == NULL);
 	return frame;
@@ -197,7 +225,7 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 	// printf("stack minimum1 %p\n", USER_STACK - 1024 * PGSIZE);
 	// printf("stack minimum2 %p\n", USER_STACK - 256 * PGSIZE);
 	// printf("onsyscall %d\n", thread_current()->on_syscall);
-
+	// printf("reach handle fault\n");
 
 	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
 	page = spt_find_page(spt, pg_round_down(addr)); 
@@ -255,14 +283,17 @@ vm_do_claim_page (struct page *page) {
 	page->frame = frame;
 
 	/* TODO: Insert page table entry to map page's VA to frame's PA. */
-	// printf("claim page va %p kva %p \n", page->va, frame->kva);
+	// printf("claim page va %p kva %p %d\n", page->va, frame->kva, page->writable);
 	bool done = pml4_set_page(thread_current()->pml4, page->va, frame->kva, page->writable);
+	// printf("pass this\n");
 
 	if(!done){
 		return false;
 	}
 	bool ret = swap_in (page, frame->kva);
 	// printf("done %d\n", ret);
+	// printf("reach do claim page\n");
+	// printf("ret value %d\n", ret);
 	return ret;
 }
 
@@ -325,7 +356,9 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			if(!success){
 				return false;
 			}
+			// printf("before\n");
 			success = vm_claim_page(page->va);
+			// printf("after\n");
 			if(!success){
 				palloc_free_page (page->va);
 				return false;
@@ -375,8 +408,9 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			info->type = src_info->type;
 			void * aux = (void*) info;
 			struct vm_initializer *init = page->uninit.init;
+			// printf("init %p\n", init);
 			if (!vm_alloc_page_with_initializer(VM_FILE, info->upage,
-				info->writable, init, aux)){
+				info->writable, lazy_load_segment, aux)){
 
 				return false;
 			}
