@@ -224,7 +224,6 @@ int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
 		struct page *page = spt_find_page(&thread_current()->spt, pg_round_down(buffer));
 		// printf("write %p\n", pg_round_down(buffer));
 		// printf("%d\n", page==NULL);
-		// printf("writable %d\n", page->writable);
 		if(page == NULL ){
 			// printf("write %p\n", pg_round_down(buffer));
 			

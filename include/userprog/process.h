@@ -11,6 +11,7 @@ void process_exit (void);
 void process_activate (struct thread *next);
 
 struct lock file_lock;
+struct lock evit_lock;
 
 bool lazy_load_segment (struct page *page, void *aux);
 bool load_segment (struct file *file, off_t ofs, uint8_t *upage,

@@ -66,9 +66,11 @@ anon_swap_in (struct page *page, void *kva) {
 
 	// page->frame->page = page;
 	int i = 0;
+	lock_acquire(&file_lock);
 	for (i=0;i<8;i++){
 		disk_read(swap_disk, num*8 + i, (page->va) + i * DISK_SECTOR_SIZE);
 	}
+	lock_release(&file_lock);
 
 	bitmap_set(swap_slot_bitmap, num, false);
 
@@ -76,7 +78,9 @@ anon_swap_in (struct page *page, void *kva) {
 
 	list_push_back(frame_list, &page->frame->frame_elem);
 	// list_push_back(&frame_list, &page->frame->frame_elem);
-
+	//printf("anon swap in\n");
+	//printf("anon_page address:%p\n", page->va);
+	printf("anon swap in\n");
 
 
 	return true;
@@ -90,9 +94,11 @@ anon_swap_out (struct page *page) {
 	anon_page -> slot_num = num;
 
 	int i = 0;
+	lock_acquire(&file_lock);
 	for (i=0;i<8;i++){
 		disk_write(swap_disk, num*8 + i, (page->va)+ i * DISK_SECTOR_SIZE);
 	}
+	lock_release(&file_lock);
 
 	bitmap_set(swap_slot_bitmap, num, true);
 	pml4_clear_page(thread_current()->pml4, page->va);

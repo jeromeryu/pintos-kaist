@@ -61,6 +61,7 @@ process_create_initd (const char *file_name) {
 	file_name = strtok_r(file_name, " ", &file_name);
 
 	lock_init(&file_lock);
+	lock_init(&evit_lock);
 
 	parent = thread_current();
 	/* Create a new thread to execute FILE_NAME. */

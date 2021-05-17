@@ -130,10 +130,22 @@ spt_remove_page (struct supplemental_page_table *spt, struct page *page) {
 /* Get the struct frame, that will be evicted. */
 static struct frame *
 vm_get_victim (void) {
-	struct frame *victim = list_entry(list_pop_front(frame_list), struct frame, frame_elem);
+	struct frame *victim;
+	struct list_elem *e;
+	/*
+	for(e = list_begin(frame_list); e != list_end(frame_list); e = list_next(e)){
+		victim = list_entry(list_pop_front(frame_list), struct frame, frame_elem);
+		if (!victim->page->writable){
+			list_push_back(frame_list, &victim->frame_elem);
+		}else{
+			break;
+		}
+	}
+	*/
+
+	victim = list_entry(list_pop_front(frame_list), struct frame, frame_elem);
 	// printf("pop frame kva %p\n", victim->kva);
 	 /* TODO: The policy for eviction is up to you. */
-	swap_out(victim->page);
 
 	return victim;
 }
@@ -143,17 +155,22 @@ vm_get_victim (void) {
 static struct frame *
 vm_evict_frame (void) {
 	struct frame *victim  = vm_get_victim ();
+	/*
 	struct list_elem *e;
+	struct frame * frame1;
 	// struct supplemental_page_table *spt = &thread_current()->spt;
 	for(e = list_begin(frame_list); e != list_end(frame_list); e = list_next(e)){
-		struct frame * frame = list_entry(e, struct frame, frame_elem);
-		if (frame->kva != NULL){
-			if (frame->kva == victim->kva){
+		frame1 = list_entry(e, struct frame, frame_elem);
+		if (frame1->kva != NULL){
+			if (frame1->kva == victim->kva){
 				// list_remove(e);
-				swap_out(frame->page);
+				swap_out(frame1->page);
+				list_remove(&frame1->frame_elem);
+				printf("swap out1\n");
 			}
 		}
-	}
+	}*/
+	swap_out(victim->page);
 
 	/* TODO: swap out the victim and return the evicted frame. */
 	// struct page *page = victim->page;
@@ -211,8 +228,8 @@ vm_handle_wp (struct page *page UNUSED) {
 
 /* Return true on success */
 bool
-vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
-		bool user UNUSED, bool write UNUSED, bool not_present UNUSED) {
+vm_try_handle_fault (struct intr_frame *f , void *addr ,
+		bool user , bool write , bool not_present ) {
 	struct supplemental_page_table *spt = &thread_current ()->spt;
 	struct page *page = NULL;
 	/* TODO: Validate the fault */
@@ -228,7 +245,12 @@ vm_try_handle_fault (struct intr_frame *f UNUSED, void *addr ,
 	// printf("reach handle fault\n");
 
 	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
-	page = spt_find_page(spt, pg_round_down(addr)); 
+	page = spt_find_page(spt, pg_round_down(addr));
+	// printf("page type: %d\n", page->operations->type);
+	// printf("page address: %p\n", page->va);
+	if(page->va == 0x7ed000){
+		printf("hello\n");
+	}
 
 		// struct thread *t = thread_current();
 		// printf("t       %p\n", &t);
@@ -276,7 +298,9 @@ vm_claim_page (void *va) {
 /* Claim the PAGE and set up the mmu. */
 static bool
 vm_do_claim_page (struct page *page) {
+	lock_acquire(&evit_lock);
 	struct frame *frame = vm_get_frame ();
+	lock_release(&evit_lock);
 
 	/* Set links */
 	frame->page = page;
