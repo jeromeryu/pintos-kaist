@@ -73,12 +73,10 @@ int exec(const char *cmd_line){
 	}
 
 	if (!(is_user_vaddr(cmd_line))){
-
 		exit(-1);
 	}
 
 	if(!(pml4e_walk (thread_current()->pml4, cmd_line, 0))){
-
 		exit(-1);
 	}
 
@@ -88,7 +86,6 @@ int exec(const char *cmd_line){
 	strlcpy (fn_copy, cmd_line, PGSIZE);
 	i = process_exec(fn_copy);
 	if(i = -1){
-
 		exit(-1);
 	}
 	return i;
@@ -349,7 +346,6 @@ void close(int fd){
 	if(fd >= NUM_MAX_FILE){
 		return;
 	}
-
 
 	lock_acquire(&file_lock);
 

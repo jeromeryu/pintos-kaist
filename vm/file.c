@@ -26,7 +26,7 @@ vm_file_init (void) {
 bool
 file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
-	// printf("file_backed_init\n");
+	// printf("file_backed_init %p\n", page->va);
 
 	struct segment_info *info = malloc(sizeof(struct segment_info));
 	memcpy(info, page->uninit.aux, sizeof(struct segment_info));
@@ -43,7 +43,7 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the file. */
 static bool
 file_backed_swap_in (struct page *page, void *kva) {
-	// printf("file_back_swap_in\n");
+	// printf("file_back_swap_in %p\n", page->va);
 
 	memset(kva,0,4096);
 	struct file_page *file_page = &page->file;
@@ -51,7 +51,7 @@ file_backed_swap_in (struct page *page, void *kva) {
 	file_read_at(file_page->info->file, kva, file_page->info->page_read_bytes, file_page->info->ofs);
 	lock_release(&file_lock);
 	list_push_back(frame_list, &page->frame->frame_elem);
-	printf("file swap in\n");
+	// printf("file swap in\n");
 	return true;
 }
 
@@ -59,7 +59,7 @@ file_backed_swap_in (struct page *page, void *kva) {
 static bool
 file_backed_swap_out (struct page *page) {
 	struct file_page *file_page = &page->file;
-	//printf("swapout page address: %p\n", page->va);
+	// printf("swapout page address: %p\n", page->va);
 	do_munmap(page->va);
 	lock_acquire(&file_lock);
 	pml4_set_dirty(thread_current()->pml4, page->va, false);

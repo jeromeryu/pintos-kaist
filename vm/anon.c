@@ -80,7 +80,7 @@ anon_swap_in (struct page *page, void *kva) {
 	// list_push_back(&frame_list, &page->frame->frame_elem);
 	//printf("anon swap in\n");
 	//printf("anon_page address:%p\n", page->va);
-	printf("anon swap in\n");
+	// printf("anon swap in\n");
 
 
 	return true;

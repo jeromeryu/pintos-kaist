@@ -245,28 +245,46 @@ vm_try_handle_fault (struct intr_frame *f , void *addr ,
 	// printf("reach handle fault\n");
 
 	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
+	// printf("%d %d %d\n", user, write, not_present);
+	if(user && write && !not_present ){
+		// printf("exit\n");
+		exit(-1);
+	}
+
 	page = spt_find_page(spt, pg_round_down(addr));
 	// printf("page type: %d\n", page->operations->type);
 	// printf("page address: %p\n", page->va);
-	if(page->va == 0x7ed000){
-		printf("hello\n");
-	}
+	// if(page->va == 0x7ed000){
+	// 	printf("hello\n");
+	// }
 
 		// struct thread *t = thread_current();
 		// printf("t       %p\n", &t);
 		// printf("t end   %p\n", &t +sizeof(struct thread));
 		// printf("rsp     %p\n", t->tf.rsp);
 	if(page == NULL){
-		if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE){
+		// if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE){
+		if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE && write){
 			if (thread_current()->on_syscall){
+				// printf("onsyscall\n");
 				userstackpointer = thread_current()->user_rsp;
 			}else{
+				// printf("else\n");
 				userstackpointer = f->rsp;
 			}
-			if (addr >= USER_STACK - 256 * PGSIZE && addr > userstackpointer - PGSIZE){
+			// printf("user rsp %p %d\n", userstackpointer, user);
+			// printf("%p %p %d\n", addr, userstackpointer - PGSIZE, addr > userstackpointer - PGSIZE);
+			// printf("%d\n", addr >= USER_STACK - 256 * PGSIZE);
+			// if (addr >= USER_STACK - 256 * PGSIZE && addr > userstackpointer - PGSIZE){
+
+			// if ((user && addr >= USER_STACK - 256 * PGSIZE && addr > userstackpointer - PGSIZE)
+			// 	|| (!user && addr >= USER_STACK - 256 * PGSIZE)){
+
+			if (addr >= USER_STACK - 256 * PGSIZE){
 				vm_stack_growth(addr);
 				return true;
 			}else{
+				// printf("exit\n");
 				exit(-1);
 			}
 		}

@@ -28,38 +28,29 @@ test_main (void)
         if ((i & 0x1ff) == 0)
             msg ("write sparsely over page %zu", i);
         big_chunks[i*PAGE_SIZE] = (char) i;
-        //printf("big_chunks%d : %d\n",i,big_chunks[i*PAGE_SIZE]);
     }
-    printf("big_chunks0 : %d\n",big_chunks[0*PAGE_SIZE]);
-    printf("big_chunk address: %p\n", &big_chunks);
 
-    //CHECK ((handle = open ("large.txt")) > 1, "open \"large.txt\"");
-    //CHECK ((map = mmap (actual, sizeof(large), 0, handle, 0)) != MAP_FAILED, "mmap \"large.txt\"");
+    CHECK ((handle = open ("large.txt")) > 1, "open \"large.txt\"");
+    CHECK ((map = mmap (actual, sizeof(large), 0, handle, 0)) != MAP_FAILED, "mmap \"large.txt\"");
 
     /* Read in file map'd page */
-    //if (memcmp (actual, large, strlen (large)))
-        //fail ("read of mmap'd file reported bad data");
+    if (memcmp (actual, large, strlen (large)))
+        fail ("read of mmap'd file reported bad data");
 
-    for (i = 0; i < PAGE_COUNT; i++) {
-        printf("big_chunks%d : %d\n",i,big_chunks[i*PAGE_SIZE]);
-    }
 
     /* Read in anon page */
     for (i = 0; i < PAGE_COUNT; i++) {
         if (big_chunks[i*PAGE_SIZE] != (char) i)
-            printf("real data : %d\n", big_chunks[i*PAGE_SIZE]);
-            printf("wanted data : %d\n", i);
             fail ("data is inconsistent");
         if ((i & 0x1ff) == 0)
             msg ("check consistency in page %zu", i);
     }
 
     /* Check file map'd page again */
-    //if (memcmp (actual, large, strlen (large)))
-        //fail ("read of mmap'd file reported bad data");
+    if (memcmp (actual, large, strlen (large)))
+        fail ("read of mmap'd file reported bad data");
 
     /* Unmap and close opend file */
-    //munmap (map);
-    //close (handle);
+    munmap (map);
+    close (handle);
 }
-

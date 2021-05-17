@@ -910,6 +910,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 						writable, lazy_load_segment, aux))
 				return false;
 		} else {
+			// printf("is writable file %d\n", writable);
 			if (!vm_alloc_page_with_initializer (VM_FILE, upage,
 						writable, lazy_load_segment, aux))
 				return false;
