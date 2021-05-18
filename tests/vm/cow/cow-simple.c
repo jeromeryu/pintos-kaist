@@ -18,7 +18,6 @@ test_main (void)
 	void *pa_child;
 	char *buf = "Lorem ipsum";
 
-	msg("%p\n", &test_name);
 	CHECK (memcmp (buf, large, strlen (buf)) == 0, "check data consistency");
 	pa_parent = get_phys_addr((void*)large);
 

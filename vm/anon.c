@@ -43,7 +43,7 @@ vm_anon_init (void) {
 bool
 anon_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
-	printf("anon_init %p\n", page->va);
+	// printf("anon_init %p\n", page->va);
 	page->operations = &anon_ops;
 
 	struct anon_page *anon_page = &page->anon;
@@ -60,7 +60,7 @@ anon_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the swap disk. */
 static bool
 anon_swap_in (struct page *page, void *kva) {
-	printf("anon_swap_in %p\n", page->va);
+	// printf("anon_swap_in %p\n", page->va);
 	struct anon_page *anon_page = &page->anon;
 	size_t num = anon_page->slot_num;
 

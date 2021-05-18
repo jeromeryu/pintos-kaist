@@ -247,21 +247,29 @@ vm_try_handle_fault (struct intr_frame *f , void *addr ,
 	// printf("reach handle fault\n");
 
 	printf("try handle fault %p %p\n",pg_round_down(addr), addr );
-	// printf("%d %d %d\n", user, write, not_present);
+	// printf("%d %d %d \n", user, write, not_present);
 	page = spt_find_page(spt, pg_round_down(addr));
+	// printf("page == nul %d\n", page==NULL);
 	// printf("%d\n", page==NULL);
 	
 	// if(user && write && !not_present ){
 	// 	printf("exit\n");
 	// 	exit(-1);
 	// }
-	if(page != NULL && user && write && !not_present && page->writable ){
-		// printf("exit\n");
+	// printf("%d\n",user && write && !not_present);
+	// printf("dd %d\n",(page==NULL) && user && write && !not_present);
+	// if((page==NULL) && user && write && !not_present){
+	// 	printf("exit\n");
+	// 	exit(-1);
+	// }
+
+	// if(page != NULL && user && write && !not_present && page->writable ){
+	if(page != NULL && user && write && !not_present && !page->writable_real){		
 		exit(-1);
 	}
 	else if(page != NULL && user && write && !not_present && page->writable_real){
 		//copy on write
-		printf("copy on write\n");
+		// printf("copy on write\n");
 
 		// printf("va %p\n", page->va);
 		// printf("type %d\n", page->operations->type);
@@ -432,6 +440,7 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 
 			// memcpy(newpage->frame->kva, page->frame->kva, PGSIZE);
 
+
 			bool success = vm_alloc_page(VM_ANON, page->va, true);
 			if(!success){
 				// printf("return false 1\n");
@@ -442,14 +451,14 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			struct page *newpage = spt_find_page(dst, page->va);
 
 			// printf("newpage %p\n", newpage->va);
-			// // newpage->frame = page->frame;
+			newpage->frame = page->frame;
 			newpage->is_altered = false;
 
 
-			struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
-			frame->kva = page->frame->kva;
-			frame->page = newpage;
-			newpage->frame = frame;
+			// struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
+			// frame->kva = page->frame->kva;
+			// frame->page = newpage;
+			// newpage->frame = frame;
 
 			newpage->writable = false;
 			newpage->writable_real = page->writable_real;
@@ -469,15 +478,15 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 				// printf("return false\n");
 				return false;
 			}
-			bool ret = swap_in (newpage, newpage->frame->kva);
+			// bool ret = swap_in (newpage, newpage->frame->kva);
 
-
+			newpage->operations = page->operations;
 
 
 		} else if(type==VM_FILE){
 			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
 			struct segment_info *src_info = (struct segment_info*)page->uninit.aux;
-			printf("file!!!!! %p %p\n", page->frame, src_info->file);
+			// printf("file!!!!! %p %p\n", page->frame, src_info->file);
 			bool is_reopened = false;
 			for(int i=0; i<8; i++){
 				if(file_lst[i]==src_info->file && reopen_file_lst[i]!=NULL){
@@ -522,11 +531,16 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			struct page * newpage = spt_find_page(dst, page->va);
 			newpage->is_altered = false;
 
-			struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
+			// struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
 
-			frame->kva = page->frame->kva;
-			newpage->frame = frame;
-			frame->page = newpage;
+			// frame->kva = page->frame->kva;
+			// newpage->frame = frame;
+			// frame->page = newpage;
+
+			newpage->frame = page->frame;
+
+
+
 			// printf("writable %d\n", page->writable);
 			// printf("writable real %d\n", page->writable_real);
 			newpage->writable = false;
@@ -543,8 +557,9 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 
 				// printf("pass this\n");
 
-			bool ret = swap_in (newpage, frame->kva);
+			// bool ret = swap_in (newpage, frame->kva);
 			// bool ret = swap_in (newpage, newpage->frame->kva);
+			newpage->operations = page->operations;
 
 		}
 

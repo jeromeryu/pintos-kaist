@@ -809,7 +809,7 @@ lazy_load_segment (struct page *page, void *aux) {
 	size_t page_zero_bytes = info->page_zero_bytes;
 	uint8_t * upage = info->upage;
 
-	printf("lazy load segment %p\n", upage);
+	// printf("lazy load segment %p\n", upage);
 
 	/* Load this page. */
 	// if (file_read (file, page, page_read_bytes) != (int) page_read_bytes) {
