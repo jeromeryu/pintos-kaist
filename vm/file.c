@@ -43,9 +43,9 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the file. */
 static bool
 file_backed_swap_in (struct page *page, void *kva) {
-	printf("file_back_swap_in %p\n", page->va);
+	// printf("file_back_swap_in %p\n", page->va);
 
-	// memset(kva,0,4096);
+	memset(kva,0,4096);
 	struct file_page *file_page = &page->file;
 	lock_acquire(&file_lock);
 	file_read_at(file_page->info->file, kva, file_page->info->page_read_bytes, file_page->info->ofs);
@@ -85,7 +85,7 @@ file_backed_destroy (struct page *page) {
 void *
 do_mmap (void *addr, size_t length, int writable,
 		struct file *file, off_t offset) {
-	printf("mmap %p\n", addr);
+	// printf("mmap %p\n", addr);
 	struct page *page = spt_find_page(&thread_current()->spt, addr);
 	if(page!=NULL){
 		return NULL;
@@ -139,7 +139,7 @@ do_mmap (void *addr, size_t length, int writable,
 /* Do the munmap */
 void
 do_munmap (void *addr) {
-	printf("dounmap %p\n", addr);
+	// printf("dounmap %p\n", addr);
 	struct page *page = spt_find_page(&thread_current()->spt, addr);
 	if(page==NULL){
 		// printf("return\n");

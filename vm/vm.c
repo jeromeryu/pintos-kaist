@@ -64,6 +64,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 
 		/* TODO: Insert the page into the spt. */
 
+		// printf("alloc %p\n", upage);
 		struct page *page = (struct page *)malloc(sizeof(struct page));
 		// page->va = upage;
 		bool *init_func;
@@ -76,6 +77,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 		}
 
 		uninit_new(page, upage, init, type, aux, init_func);
+		page->is_altered = true;
 		page->writable = writable;
 		page->writable_real = writable;
 		return spt_insert_page(spt, page);
@@ -246,7 +248,7 @@ vm_try_handle_fault (struct intr_frame *f , void *addr ,
 	// printf("onsyscall %d\n", thread_current()->on_syscall);
 	// printf("reach handle fault\n");
 
-	printf("try handle fault %p %p\n",pg_round_down(addr), addr );
+	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
 	// printf("%d %d %d \n", user, write, not_present);
 	page = spt_find_page(spt, pg_round_down(addr));
 	// printf("page == nul %d\n", page==NULL);
@@ -583,14 +585,17 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	// printf("kill\n");
 	// printf("kill tid %d\n", thread_current()->tid);
 	struct list_elem *e;
+	lock_acquire(&vm_lock);
 	for(e = list_begin(&spt->page_list); e != list_end(&spt->page_list); e = list_remove(e)){
 		struct page *page = list_entry(e, struct page, page_elem);
 		// printf("destroy page %p\n", page->va);
 		if(!page->is_altered){
+			// printf("clear page\n");
 			pml4_clear_page(thread_current()->pml4, page->va);
 		}
 		destroy(page);
 
 		// free(page);
 	}
+	lock_release(&vm_lock);
 }
