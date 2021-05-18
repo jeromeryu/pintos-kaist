@@ -57,9 +57,9 @@ uninit_initialize (struct page *page, void *kva) {
 	// uninit->page_initializer (page, uninit->type, kva);
 	// printf("reach here2\n");
 
-	// if(init ? init (page, aux) : true){
-	// 	printf("reach here3\n");
-	// }
+	if(init){
+		printf("reach here3\n");
+	}
 	// printf("init address %p\n", init);
 	// printf("aux address %p\n", aux);
 	// printf("page address %p\n", page);

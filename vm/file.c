@@ -26,7 +26,7 @@ vm_file_init (void) {
 bool
 file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
-	// printf("file_backed_init %p\n", page->va);
+	printf("file_backed_init %p\n", page->va);
 
 	struct segment_info *info = malloc(sizeof(struct segment_info));
 	memcpy(info, page->uninit.aux, sizeof(struct segment_info));
@@ -43,7 +43,7 @@ file_backed_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the file. */
 static bool
 file_backed_swap_in (struct page *page, void *kva) {
-	// printf("file_back_swap_in %p\n", page->va);
+	printf("file_back_swap_in %p\n", page->va);
 
 	memset(kva,0,4096);
 	struct file_page *file_page = &page->file;

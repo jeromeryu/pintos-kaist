@@ -43,7 +43,7 @@ vm_anon_init (void) {
 bool
 anon_initializer (struct page *page, enum vm_type type, void *kva) {
 	/* Set up the handler */
-	// printf("anon_init\n");
+	printf("anon_init %p\n", page->va);
 	page->operations = &anon_ops;
 
 	struct anon_page *anon_page = &page->anon;
@@ -60,10 +60,11 @@ anon_initializer (struct page *page, enum vm_type type, void *kva) {
 /* Swap in the page by read contents from the swap disk. */
 static bool
 anon_swap_in (struct page *page, void *kva) {
-	// printf("anon_swap_in\n");
+	printf("anon_swap_in %p\n", page->va);
 	struct anon_page *anon_page = &page->anon;
 	size_t num = anon_page->slot_num;
 
+	// printf("num %d\n", num);
 	// page->frame->page = page;
 	int i = 0;
 	lock_acquire(&file_lock);
@@ -93,6 +94,7 @@ anon_swap_out (struct page *page) {
 	size_t num = bitmap_scan(swap_slot_bitmap, 0, 1, false);
 	anon_page -> slot_num = num;
 
+	// printf("swap out\n");
 	int i = 0;
 	lock_acquire(&file_lock);
 	for (i=0;i<8;i++){

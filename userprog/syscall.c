@@ -279,7 +279,10 @@ int read(uintptr_t user_rsp, int fd, void* buffer, unsigned size){
 			
 			exit(-1);
 		}
-		if(page->writable==false){
+		// if(page->writable==false){
+		// 	exit(-1);
+		// }
+		if(page->writable_real==false){
 			exit(-1);
 		}
 	}

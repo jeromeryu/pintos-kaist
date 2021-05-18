@@ -180,6 +180,7 @@ __do_fork (void *aux) {
 	process_activate (current);
 #ifdef VM
 	supplemental_page_table_init (&current->spt);
+
 	if (!supplemental_page_table_copy (&current->spt, &parent->spt)){
 		goto error;
 	}
@@ -313,6 +314,7 @@ process_wait (tid_t child_tid) {
 			}
 		}
 	}
+
 
 	if(child == NULL){
 		return -1;
@@ -807,7 +809,7 @@ lazy_load_segment (struct page *page, void *aux) {
 	size_t page_zero_bytes = info->page_zero_bytes;
 	uint8_t * upage = info->upage;
 
-	// printf("lazy load segment %p\n", upage);
+	printf("lazy load segment %p\n", upage);
 
 	/* Load this page. */
 	// if (file_read (file, page, page_read_bytes) != (int) page_read_bytes) {

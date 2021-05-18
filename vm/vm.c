@@ -20,6 +20,7 @@ vm_init (void) {
 	/* TODO: Your code goes here. */
 	frame_list = (struct list *)malloc(sizeof(struct list));
 	list_init(frame_list);
+	lock_init(&vm_lock);
 }
 
 /* Get the type of the page. This function is useful if you want to know the
@@ -76,6 +77,7 @@ vm_alloc_page_with_initializer (enum vm_type type, void *upage, bool writable,
 
 		uninit_new(page, upage, init, type, aux, init_func);
 		page->writable = writable;
+		page->writable_real = writable;
 		return spt_insert_page(spt, page);
 
 	}
@@ -244,26 +246,54 @@ vm_try_handle_fault (struct intr_frame *f , void *addr ,
 	// printf("onsyscall %d\n", thread_current()->on_syscall);
 	// printf("reach handle fault\n");
 
-	// printf("try handle fault %p %p\n",pg_round_down(addr), addr );
+	printf("try handle fault %p %p\n",pg_round_down(addr), addr );
 	// printf("%d %d %d\n", user, write, not_present);
-	if(user && write && !not_present ){
+	page = spt_find_page(spt, pg_round_down(addr));
+	// printf("%d\n", page==NULL);
+	
+	// if(user && write && !not_present ){
+	// 	printf("exit\n");
+	// 	exit(-1);
+	// }
+	if(page != NULL && user && write && !not_present && page->writable ){
 		// printf("exit\n");
 		exit(-1);
 	}
+	else if(page != NULL && user && write && !not_present && page->writable_real){
+		//copy on write
+		printf("copy on write\n");
 
-	page = spt_find_page(spt, pg_round_down(addr));
-	// printf("page type: %d\n", page->operations->type);
-	// printf("page address: %p\n", page->va);
-	// if(page->va == 0x7ed000){
-	// 	printf("hello\n");
-	// }
+		// printf("va %p\n", page->va);
+		// printf("type %d\n", page->operations->type);
+		// printf("type addr %p\n", page->uninit);
+		// printf("type now %d\n", page->uninit.type);
 
-		// struct thread *t = thread_current();
-		// printf("t       %p\n", &t);
-		// printf("t end   %p\n", &t +sizeof(struct thread));
-		// printf("rsp     %p\n", t->tf.rsp);
+		
+		lock_acquire(&evit_lock);
+		struct frame *frame = vm_get_frame ();
+		lock_release(&evit_lock);
+
+		page->writable = page->writable_real;
+
+		memcpy(frame->kva, page->frame->kva, PGSIZE);
+
+		frame->page = page;
+		page->frame = frame;
+		bool done = pml4_set_page(thread_current()->pml4, page->va, frame->kva, page->writable);
+
+		if(!done){
+			return false;
+		}
+
+
+		page->is_altered = true;
+
+
+		return true;
+
+	}
+
 	if(page == NULL){
-		// if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE){
 		if(USER_STACK >= addr && addr >= USER_STACK - 1024 * PGSIZE && write){
 			if (thread_current()->on_syscall){
 				// printf("onsyscall\n");
@@ -272,14 +302,6 @@ vm_try_handle_fault (struct intr_frame *f , void *addr ,
 				// printf("else\n");
 				userstackpointer = f->rsp;
 			}
-			// printf("user rsp %p %d\n", userstackpointer, user);
-			// printf("%p %p %d\n", addr, userstackpointer - PGSIZE, addr > userstackpointer - PGSIZE);
-			// printf("%d\n", addr >= USER_STACK - 256 * PGSIZE);
-			// if (addr >= USER_STACK - 256 * PGSIZE && addr > userstackpointer - PGSIZE){
-
-			// if ((user && addr >= USER_STACK - 256 * PGSIZE && addr > userstackpointer - PGSIZE)
-			// 	|| (!user && addr >= USER_STACK - 256 * PGSIZE)){
-
 			if (addr >= USER_STACK - 256 * PGSIZE){
 				vm_stack_growth(addr);
 				return true;
@@ -339,6 +361,7 @@ vm_do_claim_page (struct page *page) {
 	return ret;
 }
 
+
 /* Initialize new supplemental page table */
 void
 supplemental_page_table_init (struct supplemental_page_table *spt) {
@@ -354,7 +377,8 @@ supplemental_page_table_init (struct supplemental_page_table *spt) {
 bool
 supplemental_page_table_copy (struct supplemental_page_table *dst ,
 		struct supplemental_page_table *src ) {
-	// printf("copy\n");
+	// printf("copy@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
+	lock_acquire(&vm_lock);
 	struct list_elem *e;
 	struct file *file_lst[8] = {NULL};
 	struct file *reopen_file_lst[8] = {NULL};
@@ -365,8 +389,10 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 		// printf("isequal %d\n", type==type1);
 		if(type==VM_UNINIT){
 			// printf("uninit\n");
-			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
+			
 			struct segment_info *src_info = (struct segment_info*)page->uninit.aux;
+			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
+			// printf("%p\n", page->uninit.aux);
 			info->file = src_info->file;
 			info->ofs = src_info->ofs;
 			info->upage = src_info->upage;
@@ -392,31 +418,66 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 			
 
 		} else if(type==VM_ANON){
-			// printf("anon\n");
+			// bool success = vm_alloc_page(VM_ANON, page->va, true);
+			// if(!success){
+			// 	return false;
+			// }
+			// success = vm_claim_page(page->va);
+			// if(!success){
+			// 	palloc_free_page (page->va);
+			// 	return false;
+			// }
+
+			// struct page *newpage = spt_find_page(dst, page->va);
+
+			// memcpy(newpage->frame->kva, page->frame->kva, PGSIZE);
 
 			bool success = vm_alloc_page(VM_ANON, page->va, true);
 			if(!success){
+				// printf("return false 1\n");
 				return false;
 			}
-			// printf("before\n");
-			success = vm_claim_page(page->va);
-			// printf("after\n");
-			if(!success){
-				palloc_free_page (page->va);
-				return false;
-			}
+
 
 			struct page *newpage = spt_find_page(dst, page->va);
 
-			memcpy(newpage->frame->kva, page->frame->kva, PGSIZE);
+			// printf("newpage %p\n", newpage->va);
+			// // newpage->frame = page->frame;
+			newpage->is_altered = false;
+
+
+			struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
+			frame->kva = page->frame->kva;
+			frame->page = newpage;
+			newpage->frame = frame;
+
+			newpage->writable = false;
+			newpage->writable_real = page->writable_real;
+			page->writable = false;
+
+			// printf("va %p %p\n", page->va, newpage->va);
+			// printf("virtual %p %p\n", page->frame, newpage->frame);
+			// printf("physical %p %p\n", vtop(page->frame->kva), vtop(newpage->frame->kva));
+ 
+
+			// printf("copy type %d\n", newpage->uninit.type);
+			// printf("copy type addr %p\n", page->uninit);
+			bool done = pml4_set_page(thread_current()->pml4, newpage->va, newpage->frame->kva, newpage->writable);
+			// printf("pass this\n");
+
+			if(!done){
+				// printf("return false\n");
+				return false;
+			}
+			bool ret = swap_in (newpage, newpage->frame->kva);
+
+
+
 
 		} else if(type==VM_FILE){
 			struct segment_info *info = (struct segment_info*)malloc(sizeof(struct segment_info));
 			struct segment_info *src_info = (struct segment_info*)page->uninit.aux;
-			// printf("file!!!!! %p %p\n", page->frame, src_info->file);
-			// info->file = src_info->file;
-			// info->file = file_reopen(src_info->file);
-
+			printf("file!!!!! %p %p\n", page->frame, src_info->file);
 			bool is_reopened = false;
 			for(int i=0; i<8; i++){
 				if(file_lst[i]==src_info->file && reopen_file_lst[i]!=NULL){
@@ -456,21 +517,42 @@ supplemental_page_table_copy (struct supplemental_page_table *dst ,
 
 				return false;
 			}
-			// printf("here 222 %p %d %d\n", info->upage, info->writable, page->writable);
-			struct page *newpage = spt_find_page(dst, page->va);
-			// printf("checkpoint1\n");
-			bool success = vm_claim_page(info->upage);
-			// printf("checkpoint2\n");
 
-			newpage->writable = page->writable;
-			// printf("checkpoint3  %p, %p\n", newpage->frame, page->frame);
 
-			memcpy(newpage->frame->kva, page->frame->kva, PGSIZE);
+			struct page * newpage = spt_find_page(dst, page->va);
+			newpage->is_altered = false;
 
-			// printf("done file!!!!\n");
+			struct frame *frame = (struct frame *)malloc(sizeof(struct frame));
+
+			frame->kva = page->frame->kva;
+			newpage->frame = frame;
+			frame->page = newpage;
+			// printf("writable %d\n", page->writable);
+			// printf("writable real %d\n", page->writable_real);
+			newpage->writable = false;
+			newpage->writable_real = page->writable_real;
+			page->writable = false;
+			// printf("new writable %d\n", newpage->writable);
+			// printf("new writable real %d\n", newpage->writable_real);
+
+			// printf("va %p %p\n", page->va, newpage->va);
+			// printf("virtual %p %p\n", page->frame, newpage->frame);
+			// printf("physical %p %p\n", vtop(page->frame->kva), vtop(newpage->frame->kva));
+ 
+			bool done = pml4_set_page(thread_current()->pml4, newpage->va, newpage->frame->kva, newpage->writable);
+
+				// printf("pass this\n");
+
+			bool ret = swap_in (newpage, frame->kva);
+			// bool ret = swap_in (newpage, newpage->frame->kva);
+
 		}
 
 	}
+
+	lock_release(&vm_lock);
+
+	// printf("done@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n");
 	return true;
 
 }
@@ -489,6 +571,9 @@ supplemental_page_table_kill (struct supplemental_page_table *spt) {
 	for(e = list_begin(&spt->page_list); e != list_end(&spt->page_list); e = list_remove(e)){
 		struct page *page = list_entry(e, struct page, page_elem);
 		// printf("destroy page %p\n", page->va);
+		if(!page->is_altered){
+			pml4_clear_page(thread_current()->pml4, page->va);
+		}
 		destroy(page);
 
 		// free(page);
