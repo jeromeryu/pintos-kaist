@@ -142,6 +142,8 @@ struct thread {
 	bool on_syscall;
 	uintptr_t user_rsp;
 
+	uint32_t cwd_cluster;
+
 	unsigned magic;                     /* Detects stack overflow. */
 
 

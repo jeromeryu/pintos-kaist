@@ -6,6 +6,7 @@
 #include "filesys/filesys.h"
 #include "filesys/free-map.h"
 #include "threads/malloc.h"
+#include "filesys/fat.h"
 
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
@@ -42,11 +43,36 @@ struct inode {
  * POS. */
 static disk_sector_t
 byte_to_sector (const struct inode *inode, off_t pos) {
+#ifdef EFILESYS
+	ASSERT (inode != NULL);
+	if (pos < inode->data.length){
+		cluster_t c = inode->data.start;
+		printf("cstart %d %d\n", c, pos);
+		while(pos >= DISK_SECTOR_SIZE){
+			if(c==EOChain){
+				printf("cc %d\n", c);
+				return -1;
+			}
+			c = fat_get(c);
+			pos -= DISK_SECTOR_SIZE;
+		}
+		printf("c %d\n", c);
+		disk_sector_t s = cluster_to_sector(c);
+		printf("s %d\n", s);
+		if(c == EOChain || c==0){
+			return -1;
+		}
+		return s;
+	} else {
+		return -1;
+	}
+#else
 	ASSERT (inode != NULL);
 	if (pos < inode->data.length)
 		return inode->data.start + pos / DISK_SECTOR_SIZE;
 	else
 		return -1;
+#endif
 }
 
 /* List of open inodes, so that opening a single inode twice
@@ -66,6 +92,54 @@ inode_init (void) {
  * Returns false if memory or disk allocation fails. */
 bool
 inode_create (disk_sector_t sector, off_t length) {
+#ifdef EFILESYS
+	struct inode_disk *disk_inode = NULL;
+	bool success = false;
+
+	ASSERT (length >= 0);
+
+	/* If this assertion fails, the inode structure is not exactly
+	 * one sector in size, and you should fix that. */
+	ASSERT (sizeof *disk_inode == DISK_SECTOR_SIZE);
+
+	printf("inode creat %d %d\n", sector, length);
+	disk_inode = calloc (1, sizeof *disk_inode);
+	if (disk_inode != NULL) {
+		size_t sectors = bytes_to_sectors (length);
+		printf("sectors %d\n", sectors);
+		disk_inode->length = length;
+		disk_inode->magic = INODE_MAGIC;
+		cluster_t cid = 0;
+		if(sectors > 0){
+			cid = fat_create_chain(cid);
+			disk_inode->start = cid;
+			printf("start %d\n", cid);
+			for(int j=1; j<sectors; j++){
+				cid = fat_create_chain(cid);
+				if(cid == 0){
+					return false;
+				}
+			}
+		}
+
+		printf("sector %d\n", sector);
+
+		disk_write (filesys_disk, sector, disk_inode);
+		if (sectors > 0) {
+			static char zeros[DISK_SECTOR_SIZE];
+			size_t i;
+			cluster_t c = disk_inode->start;
+			for (i = 0; i < sectors; i++) {
+				disk_write (filesys_disk, cluster_to_sector(c), zeros); 
+				c = fat_get(c);
+			}
+		}
+		success = true; 
+		free (disk_inode);
+	}	
+	return success;
+
+#else
 	struct inode_disk *disk_inode = NULL;
 	bool success = false;
 
@@ -94,6 +168,7 @@ inode_create (disk_sector_t sector, off_t length) {
 		free (disk_inode);
 	}
 	return success;
+#endif
 }
 
 /* Reads an inode from SECTOR
@@ -104,6 +179,7 @@ inode_open (disk_sector_t sector) {
 	struct list_elem *e;
 	struct inode *inode;
 
+	printf("inode open\n");
 	/* Check whether this inode is already open. */
 	for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
 			e = list_next (e)) {
@@ -126,6 +202,8 @@ inode_open (disk_sector_t sector) {
 	inode->deny_write_cnt = 0;
 	inode->removed = false;
 	disk_read (filesys_disk, inode->sector, &inode->data);
+	printf("open %d\n", sector);
+	printf("inode data start %d\n", inode->data.start);
 	return inode;
 }
 
@@ -185,9 +263,17 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset) {
 	off_t bytes_read = 0;
 	uint8_t *bounce = NULL;
 
+	printf("inode reat at %d %d %d\n", inode->sector, size, offset);
+
+	printf("data start %d\n", inode->data.start);
+
 	while (size > 0) {
 		/* Disk sector to read, starting byte offset within sector. */
 		disk_sector_t sector_idx = byte_to_sector (inode, offset);
+		printf("sector %d\n", sector_idx);
+		if(sector_idx == -1 ) {
+			break;
+		}
 		int sector_ofs = offset % DISK_SECTOR_SIZE;
 
 		/* Bytes left in inode, bytes left in sector, lesser of the two. */
@@ -242,6 +328,9 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 	while (size > 0) {
 		/* Sector to write, starting byte offset within sector. */
 		disk_sector_t sector_idx = byte_to_sector (inode, offset);
+		if(sector_idx==-1){
+			break;
+		}
 		int sector_ofs = offset % DISK_SECTOR_SIZE;
 
 		/* Bytes left in inode, bytes left in sector, lesser of the two. */

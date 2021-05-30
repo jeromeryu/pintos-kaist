@@ -7,6 +7,8 @@
 #include "filesys/inode.h"
 #include "filesys/directory.h"
 #include "devices/disk.h"
+#include "filesys/fat.h"
+#include "threads/thread.h"
 
 /* The disk that contains the file system. */
 struct disk *filesys_disk;
@@ -59,6 +61,83 @@ filesys_done (void) {
  * or if internal memory allocation fails. */
 bool
 filesys_create (const char *name, off_t initial_size) {
+#ifdef EFILESYS
+	// struct dir *dir = dir_open_root ();
+	struct dir *dir;
+	if(name[0] == '/'){
+		dir = dir_open_root();
+	} else {
+		dir = dir_open(inode_open( cluster_to_sector( thread_current()->cwd_cluster)));
+	}
+
+	printf("filesys_create !!!!! %d \n", thread_current()->cwd_cluster);
+	// printf("dir null %d\n", dir != NULL);
+	// bool ic  = inode_create (inode_sector, initial_size);
+	// printf("%d\n", ic);
+	// bool da = dir_add (dir, name, inode_sector);
+	// printf("%d %d\n", ic, da);
+	char * next;
+	char *name_copy = malloc(strlen(name) + 1);
+	strlcpy(name_copy, name, strlen(name) + 1);
+
+	char *ret_after;
+	char *ret = strtok_r(name_copy, " ", &next);
+	struct inode *i;
+	while(ret){
+		ret_after = strtok_r(NULL, " ", &next);
+		if(ret_after == NULL){
+			break;
+		}
+		if(!dir_lookup(dir, ret, &i)){
+			//no subdirectory
+			dir_close(dir);
+			free(name_copy);
+			return false;
+		}
+		dir_close(dir);
+		dir = dir_open(i);
+		ret = ret_after;
+	}
+
+	// char *ret;
+	// ret = strtok_r(full_file_name, " ", &next);
+	// while(ret){
+	// 	arr[idx] = ret;
+	// 	ret = strtok_r(NULL, " ", &next);
+	// 	idx ++;
+	// }
+
+	disk_sector_t inode_sector = 0;
+	cluster_t clst = fat_create_chain(0);
+	inode_sector = cluster_to_sector(clst);
+
+	printf("clst %d\n", clst);
+	printf("inode_sector %d\n", inode_sector);
+
+	if(dir_lookup(dir, ret, &i)){
+		printf("dir lookup  true\n");
+		inode_close(i);
+		free(name_copy);
+		return false;
+	}
+
+	bool success = (dir != NULL
+			&& inode_create (inode_sector, initial_size)
+			&& dir_add (dir, ret, inode_sector));
+	// bool success = (dir!=NULL) && ic && da;
+	
+	printf("@@@@@@success %d\n", success);
+
+	if (!success && inode_sector != 0){
+		printf("fail\n");
+		fat_remove_chain(sector_to_cluster(inode_sector), 0);
+	}
+	dir_close (dir);
+	printf("create %d\n", success);
+	free(name_copy);
+
+	return success;
+#else
 	disk_sector_t inode_sector = 0;
 	struct dir *dir = dir_open_root ();
 	bool success = (dir != NULL
@@ -68,8 +147,8 @@ filesys_create (const char *name, off_t initial_size) {
 	if (!success && inode_sector != 0)
 		free_map_release (inode_sector, 1);
 	dir_close (dir);
-
 	return success;
+#endif
 }
 
 /* Opens the file with the given NAME.
@@ -79,6 +158,17 @@ filesys_create (const char *name, off_t initial_size) {
  * or if an internal memory allocation fails. */
 struct file *
 filesys_open (const char *name) {
+#ifdef EFILESYS
+	struct dir *dir = dir_open_root ();
+	struct inode *inode = NULL;
+
+	printf("%s\n", name);
+	if (dir != NULL)
+		dir_lookup (dir, name, &inode);
+	dir_close (dir);
+
+	return file_open (inode);
+#else
 	struct dir *dir = dir_open_root ();
 	struct inode *inode = NULL;
 
@@ -87,6 +177,8 @@ filesys_open (const char *name) {
 	dir_close (dir);
 
 	return file_open (inode);
+#endif
+
 }
 
 /* Deletes the file named NAME.

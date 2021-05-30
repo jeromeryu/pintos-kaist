@@ -14,6 +14,7 @@
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
+#include "filesys/fat.h"
 
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top
@@ -561,6 +562,12 @@ init_thread (struct thread *t, const char *name, int priority) {
 		t->priority = check_pri(pri);
 
 		list_push_back(&all_list, &t->all_elem);
+	}
+
+	if(t==initial_thread){
+		t->cwd_cluster = ROOT_DIR_CLUSTER;
+	} else {
+		t->cwd_cluster = running_thread()->cwd_cluster;
 	}
 
 }
