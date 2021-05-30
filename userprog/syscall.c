@@ -11,6 +11,7 @@
 #include "threads/palloc.h"
 #include <string.h>
 #include "filesys/file.h"
+#include "filesys/filesys.h"
 
 
 void syscall_entry (void);
@@ -103,6 +104,10 @@ bool create(const char *file, unsigned initial_size){
 	
 	if(!(pml4e_walk (thread_current()->pml4, file, 0))){
 		exit(-1);
+	}
+
+	if(!strcmp(file, "")){
+		return false;
 	}
 
 	lock_acquire(&file_lock);

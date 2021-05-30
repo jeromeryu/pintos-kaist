@@ -74,7 +74,7 @@ filesys_create (const char *name, off_t initial_size) {
 		dir = dir_open(inode_open(  thread_current()->cur_sector));
 	}
 
-	// printf("%s\n", name);
+	// printf("file create name %s\n", name);
 	// printf("filesys_create !!!!! %d \n", thread_current()->cur_sector);
 	// printf("dir null %d\n", dir != NULL);
 	// bool ic  = inode_create (inode_sector, initial_size);
@@ -86,10 +86,10 @@ filesys_create (const char *name, off_t initial_size) {
 	strlcpy(name_copy, name, strlen(name) + 1);
 
 	char *ret_after;
-	char *ret = strtok_r(name_copy, " ", &next);
+	char *ret = strtok_r(name_copy, "/", &next);
 	struct inode *i;
 	while(ret){
-		ret_after = strtok_r(NULL, " ", &next);
+		ret_after = strtok_r(NULL, "/", &next);
 		if(ret_after == NULL){
 			break;
 		}
