@@ -15,7 +15,9 @@
         "vaddr.h": "c",
         "palloc.h": "c",
         "main.h": "c",
-        "lib.h": "c"
+        "lib.h": "c",
+        "directory.h": "c",
+        "stdio.h": "c"
     },
     "C_Cpp.default.compilerArgs": ["-DUSERPROG", "-DEFILESYS", "-DEXTRA2", "-DVM"]
 }

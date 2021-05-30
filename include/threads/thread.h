@@ -142,7 +142,8 @@ struct thread {
 	bool on_syscall;
 	uintptr_t user_rsp;
 
-	uint32_t cwd_cluster;
+	// uint32_t cwd_cluster;
+	uint32_t cur_sector;
 
 	unsigned magic;                     /* Detects stack overflow. */
 

@@ -4,11 +4,12 @@
 #include <string.h>
 #include "filesys/file.h"
 #include "filesys/free-map.h"
-#include "filesys/inode.h"
 #include "filesys/directory.h"
 #include "devices/disk.h"
 #include "filesys/fat.h"
+#include "filesys/inode.h"
 #include "threads/thread.h"
+
 
 /* The disk that contains the file system. */
 struct disk *filesys_disk;
@@ -67,10 +68,14 @@ filesys_create (const char *name, off_t initial_size) {
 	if(name[0] == '/'){
 		dir = dir_open_root();
 	} else {
-		dir = dir_open(inode_open( cluster_to_sector( thread_current()->cwd_cluster)));
+
+		// printf("open inode sector %d\n",  thread_current()->cur_sector);
+		// printf("check %d\n",sector_to_cluster( cluster_to_sector( thread_current()->cwd_cluster)));
+		dir = dir_open(inode_open(  thread_current()->cur_sector));
 	}
 
-	printf("filesys_create !!!!! %d \n", thread_current()->cwd_cluster);
+	// printf("%s\n", name);
+	// printf("filesys_create !!!!! %d \n", thread_current()->cur_sector);
 	// printf("dir null %d\n", dir != NULL);
 	// bool ic  = inode_create (inode_sector, initial_size);
 	// printf("%d\n", ic);
@@ -111,11 +116,11 @@ filesys_create (const char *name, off_t initial_size) {
 	cluster_t clst = fat_create_chain(0);
 	inode_sector = cluster_to_sector(clst);
 
-	printf("clst %d\n", clst);
-	printf("inode_sector %d\n", inode_sector);
-
+	// printf("clst %d\n", clst);
+	// printf("inode_sector %d\n", inode_sector);
+	// printf("ret %s\n", ret);
 	if(dir_lookup(dir, ret, &i)){
-		printf("dir lookup  true\n");
+		// printf("dir lookup  true\n");
 		inode_close(i);
 		free(name_copy);
 		return false;
@@ -126,14 +131,14 @@ filesys_create (const char *name, off_t initial_size) {
 			&& dir_add (dir, ret, inode_sector));
 	// bool success = (dir!=NULL) && ic && da;
 	
-	printf("@@@@@@success %d\n", success);
+	// printf("@@@@@@success %d\n", success);
 
 	if (!success && inode_sector != 0){
-		printf("fail\n");
+		// printf("fail\n");
 		fat_remove_chain(sector_to_cluster(inode_sector), 0);
 	}
 	dir_close (dir);
-	printf("create %d\n", success);
+	// printf("create %d\n", success);
 	free(name_copy);
 
 	return success;
@@ -159,10 +164,17 @@ filesys_create (const char *name, off_t initial_size) {
 struct file *
 filesys_open (const char *name) {
 #ifdef EFILESYS
-	struct dir *dir = dir_open_root ();
+	// printf("filesys_open\n");
+	struct dir *dir;
+	if(name[0] == '/'){
+		dir = dir_open_root();
+	} else {
+		// dir = dir_open(inode_open( cluster_to_sector( thread_current()->cwd_cluster)));
+		dir = dir_open(inode_open(  thread_current()->cur_sector));
+	}
 	struct inode *inode = NULL;
 
-	printf("%s\n", name);
+	// printf("%s\n", name);
 	if (dir != NULL)
 		dir_lookup (dir, name, &inode);
 	dir_close (dir);

@@ -565,9 +565,13 @@ init_thread (struct thread *t, const char *name, int priority) {
 	}
 
 	if(t==initial_thread){
-		t->cwd_cluster = ROOT_DIR_CLUSTER;
+		// t->cwd_cluster = ROOT_DIR_CLUSTER;
+		t->cur_sector = cluster_to_sector(ROOT_DIR_CLUSTER);
+		
+
 	} else {
-		t->cwd_cluster = running_thread()->cwd_cluster;
+		// t->cwd_cluster = running_thread()->cwd_cluster;
+		t->cur_sector = running_thread()->cur_sector;
 	}
 
 }
