@@ -19,7 +19,11 @@ struct dir_entry {
  * given SECTOR.  Returns true if successful, false on failure. */
 bool
 dir_create (disk_sector_t sector, size_t entry_cnt) {
-	return inode_create (sector, entry_cnt * sizeof (struct dir_entry));
+	bool res = inode_create (sector, entry_cnt * sizeof (struct dir_entry));
+	struct inode *inode = inode_open(sector);
+	inode->data.is_directory = 1;
+	inode_close(inode);
+	return res;
 }
 
 /* Opens and returns the directory for the given INODE, of which
@@ -42,8 +46,10 @@ dir_open (struct inode *inode) {
  * Return true if successful, false on failure. */
 struct dir *
 dir_open_root (void) {
-	// return dir_open (inode_open (ROOT_DIR_SECTOR));
-	return dir_open (inode_open(cluster_to_sector(ROOT_DIR_CLUSTER)));
+	return dir_open (inode_open (ROOT_DIR_SECTOR));
+	// printf("root cluster %d\n", ROOT_DIR_CLUSTER);
+	// printf("root sector %d\n", cluster_to_sector(ROOT_DIR_CLUSTER));
+	// return dir_open (inode_open(cluster_to_sector(ROOT_DIR_CLUSTER)));
 }
 
 /* Opens and returns a new directory for the same inode as DIR.
@@ -203,7 +209,7 @@ dir_readdir (struct dir *dir, char name[NAME_MAX + 1]) {
 
 	while (inode_read_at (dir->inode, &e, sizeof e, dir->pos) == sizeof e) {
 		dir->pos += sizeof e;
-		if (e.in_use) {
+		if (e.in_use && strcmp(".", e.name) && strcmp("..", e.name)) {
 			strlcpy (name, e.name, NAME_MAX + 1);
 			return true;
 		}

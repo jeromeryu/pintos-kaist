@@ -35,7 +35,8 @@ test_main (void)
         break;
       CHECK ((fd = open (file_name)) > 1, "open \"%s\"", file_name);
       snprintf (contents, sizeof contents, "contents %d\n", i);
-      if (write (fd, contents, strlen (contents)) != (int) strlen (contents)) 
+      int w = write (fd, contents, strlen (contents));
+      if (w != (int) strlen (contents)) 
         {
           CHECK (remove (file_name), "remove \"%s\"", file_name);
           close (fd);
@@ -61,10 +62,19 @@ test_main (void)
              "names should be \"%s\" and \"%s\", "
              "actually \"%s\" and \"%s\"",
              file_name, dir_name, name[0], name[1]);
+             
+
+      // fd = open (".");
+      // readdir (fd, name[0]);
+      // readdir (fd, name[1]);
+      // readdir (fd, name[2]);
+      // (!strcmp (name[0], dir_name) && !strcmp (name[1], file_name))
+      //        || (!strcmp (name[1], dir_name) && !strcmp (name[0], file_name));
       close (fd);
 
       /* Descend into directory. */
       CHECK (chdir (dir_name), "chdir \"%s\"", dir_name);
+      // chdir (dir_name);
     }
   CHECK (i > 200, "created files and directories only to level %d", i);
   quiet = false;

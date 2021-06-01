@@ -92,6 +92,7 @@ inode_create (disk_sector_t sector, off_t length) {
 		// printf("sectors %d\n", sectors);
 		disk_inode->length = length;
 		disk_inode->magic = INODE_MAGIC;
+		disk_inode->is_directory = 0;
 		cluster_t cid = 0;
 		if(sectors > 0){
 			cid = fat_create_chain(cid);
@@ -166,10 +167,12 @@ inode_open (disk_sector_t sector) {
 
 	// printf("inode open\n");
 	/* Check whether this inode is already open. */
+	// printf("inode open %d\n", sector);
 	for (e = list_begin (&open_inodes); e != list_end (&open_inodes);
 			e = list_next (e)) {
 		inode = list_entry (e, struct inode, elem);
 		if (inode->sector == sector) {
+			// printf("inode reopen %d\n", sector);
 			inode_reopen (inode);
 			return inode; 
 		}
@@ -212,20 +215,23 @@ inode_get_inumber (const struct inode *inode) {
 void
 inode_close (struct inode *inode) {
 #ifdef EFILESYS
-	// printf("inode_close %d\n", inode->sector);
+	// printf("inode_close %d %d\n", inode->sector, inode->open_cnt);
 	if (inode == NULL)
 		return;
 	
+	disk_write(filesys_disk, inode->sector, &inode->data);
 	if (--inode->open_cnt == 0) {
 		list_remove (&inode->elem);
 		if (inode->removed) {
-			fat_remove_chain(inode->sector, 0);
+			
+			// fat_remove_chain(inode->sector, 0);
+			fat_remove_chain(sector_to_cluster(inode->sector), 0);
 			fat_remove_chain(inode->data.start, 0);
 		}
-		
+		disk_write(filesys_disk, inode->sector, &inode->data);	
+		free (inode); 
 	}
-	disk_write(filesys_disk, inode->sector, &inode->data);
-	free (inode); 
+
 #else
 	/* Ignore null pointer. */
 	if (inode == NULL)
@@ -331,19 +337,26 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 	while (size > 0) {
 		/* Sector to write, starting byte offset within sector. */
 		disk_sector_t sector_idx = byte_to_sector (inode, offset);
-		// printf("inode write at %d\n", sector_idx);
+		cluster_t c;
 		while (sector_idx == -1){
 			inode->data.length = offset+size;
-			cluster_t c = inode->data.start;
+			c = inode->data.start;
 			while ((fat_get(c) != EOChain) && (c != 0)){
 				c = fat_get(c);
 			}
 			c = fat_create_chain(c);
 			
+			if(c == 0){
+				break;
+			}
+
 			if(inode->data.start == 0){
 				inode->data.start = c;
 			}
 			sector_idx = byte_to_sector(inode, offset);
+		}
+		if(c == 0){
+			break;
 		}
 
 		int sector_ofs = offset % DISK_SECTOR_SIZE;

@@ -150,12 +150,14 @@ int open(const char *file){
 	if(file == NULL){
 		exit(-1);
 	}
-
-	if (!(is_user_vaddr(file))){
+	if(!(pml4e_walk (thread_current()->pml4, file, 0))){
 		exit(-1);
 	}
 
-	if(!(pml4e_walk (thread_current()->pml4, file, 0))){
+	if(!strcmp(file, "")){
+		return -1;
+	}
+	if (!(is_user_vaddr(file))){
 		exit(-1);
 	}
 
@@ -241,6 +243,11 @@ int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
 		putbuf(buffer, size);
 	} else {
 		lock_acquire(&file_lock);
+		struct file *file = thread_current()->fd[fd];
+		if(file->inode->data.is_directory){
+			lock_release(&file_lock);
+			exit(-1);	
+		}
 		res = file_write(thread_current()->fd[fd], buffer, size);
 		lock_release(&file_lock);
 		return res;
@@ -445,6 +452,56 @@ void *mmap (void *addr, size_t length, int writable, int fd, off_t offset){
 
 }
 
+bool chdir(const char *dir){
+	return filesys_chdir(dir);
+}
+
+bool mkdir(const char *dir){
+	if(!strcmp(dir, "")){
+		return false;
+	}
+	return filesys_mkdir(dir);
+}
+
+bool readdir(int fd, char *name){
+	if((thread_current()->fd)[fd]==NULL){
+		return false;
+	}	
+	if(fd >= NUM_MAX_FILE){
+		return false;
+	}
+
+	struct dir *dir = (struct dir*)(thread_current()->fd[fd]);
+	return filesys_readdir(dir, name);	
+}
+
+bool isdir(int fd){
+	if((thread_current()->fd)[fd]==NULL){
+		return false;
+	}	
+	if(fd >= NUM_MAX_FILE){
+		return false;
+	}
+	struct dir *dir = (struct dir*)(thread_current()->fd[fd]);
+	return filesys_isdir(dir);	
+}
+
+int inumber(int fd){
+	if((thread_current()->fd)[fd]==NULL){
+		return -1;
+	}	
+	if(fd >= NUM_MAX_FILE){
+		return -1;
+	}
+	struct file *file = (struct file*)(thread_current()->fd[fd]);
+	return filesys_inumber(file);
+}
+
+int symlink(const char *target, const char *linkpath){
+
+}
+
+
 /* The main system call interface */
 void
 syscall_handler (struct intr_frame *f) {
@@ -535,6 +592,24 @@ syscall_handler (struct intr_frame *f) {
 	case SYS_MUNMAP:
 		// printf("munmap\n");
 		do_munmap(f->R.rdi);
+		break;
+	case SYS_CHDIR:
+		f->R.rax = chdir(f->R.rdi);
+		break;
+	case SYS_MKDIR:
+		f->R.rax = mkdir(f->R.rdi);
+		break;
+	case SYS_READDIR:
+		f->R.rax = readdir(f->R.rdi, f->R.rsi);
+		break;
+	case SYS_ISDIR:
+		f->R.rax = isdir(f->R.rdi);
+		break;
+	case SYS_INUMBER:
+		f->R.rax = inumber(f->R.rdi);
+		break;
+	case SYS_SYMLINK:
+		f->R.rax = symlink(f->R.rdi, f->R.rsi);
 		break;
 	default:
 		break;
