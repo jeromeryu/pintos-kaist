@@ -106,6 +106,16 @@ filesys_create (const char *name, off_t initial_size) {
 			free(name_copy);
 			return false;
 		}
+		disk_sector_t s = 0;
+		s = i->sector;
+		struct inode *inode_new = inode_open(s);
+		if (inode_new->data.is_symlink){
+			char *target = malloc(20 * sizeof(char));
+			inode_read_at(inode_new, target, 20, 0);
+			dir = filesys_open(target);
+			ret = ret_after;
+			continue;
+		}
 		// printf("create %s\n", ret);
 		dir_close(dir);
 		dir = dir_open(i);
@@ -133,7 +143,7 @@ filesys_create (const char *name, off_t initial_size) {
 	// printf("filesys_create4 %d %d\n", dir->inode->sector,dir->inode->open_cnt);	
 
 	bool success = (dir != NULL
-			&& inode_create (inode_sector, initial_size)
+			&& inode_create (inode_sector, initial_size,0)
 			&& dir_add (dir, ret, inode_sector));
 	// bool success = (dir!=NULL) && ic && da;
 	
@@ -156,7 +166,7 @@ filesys_create (const char *name, off_t initial_size) {
 	struct dir *dir = dir_open_root ();
 	bool success = (dir != NULL
 			&& free_map_allocate (1, &inode_sector)
-			&& inode_create (inode_sector, initial_size)
+			&& inode_create (inode_sector, initial_size,0)
 			&& dir_add (dir, name, inode_sector));
 	if (!success && inode_sector != 0)
 		free_map_release (inode_sector, 1);
@@ -201,6 +211,18 @@ filesys_open (const char *name) {
 			free(name_copy);
 			return NULL;
 		}
+		disk_sector_t s = 0;
+		s = i->sector;
+		struct inode *inode_new = inode_open(s);
+		if (inode_new->data.is_symlink){
+			char *target = malloc(20 * sizeof(char));
+			inode_read_at(inode_new, target, 20, 0);
+			dir = filesys_open(target);
+			ret = ret_after;
+			continue;
+		}
+
+
 		dir_close(dir);
 		dir = dir_open(i);
 		ret = ret_after;
@@ -229,6 +251,11 @@ filesys_open (const char *name) {
 		}
 		// printf("i %d %d\n", i->sector, i->open_cnt);
 		struct inode *inode_new = inode_open(s);
+		if(inode_new->data.is_symlink){
+			char *target = malloc(20 * sizeof(char));
+			inode_read_at(inode_new, target, 20, 0);
+			return filesys_open(target);
+		}
 		// printf("inew %d %d\n", inode_new->sector, inode_new->open_cnt);
 		if(inode_new->data.is_directory == 1){
 			struct dir *open_dir = dir_open(inode_new);
@@ -526,6 +553,69 @@ bool filesys_isdir(struct dir *dir){
 int filesys_inumber(struct file *file){
 	return file->inode->sector;
 }
+
+int filesys_symlink(const char *target, const char *linkpath){
+
+	struct dir *dir;
+	if(linkpath[0] == '/'){
+		dir = dir_open_root();
+	} else {
+		dir = dir_open(inode_open(thread_current()->cur_sector));
+	}
+
+	char *next;
+	char *name_copy = malloc(strlen(linkpath) + 1);
+	strlcpy(name_copy, linkpath, strlen(linkpath) + 1);
+
+	char *ret_after;
+	char *ret = strtok_r(name_copy, "/", &next);
+	struct inode *i;
+	while(ret){
+		ret_after = strtok_r(NULL, "/", &next);
+		if(ret_after == NULL){
+			break;
+		}
+		if(!dir_lookup(dir, ret, &i)){
+			//no subdirectory
+			dir_close(dir);
+			free(name_copy);
+			return -1;
+		}
+		dir_close(dir);
+		dir = dir_open(i);
+		ret = ret_after;
+	}
+
+	disk_sector_t inode_sector = 0;
+	cluster_t clst = fat_create_chain(0);
+	inode_sector = cluster_to_sector(clst);
+	if(clst==0){
+		inode_close(i);
+		dir_close(dir);
+		free(name_copy);
+		return -1;
+	}
+	
+
+	bool success = (dir != NULL
+			&& inode_create(inode_sector, strlen(target) + 1, 1)
+			&& dir_add (dir, ret, inode_sector));
+	
+	dir_lookup(dir, ret, &i);
+	inode_write_at(i, target, strlen(target)+1, 0);
+	inode_close(i);
+
+	if (!success && inode_sector != 0){
+		fat_remove_chain(sector_to_cluster(inode_sector), 0);
+	}
+
+	dir_close (dir);
+	free(name_copy);
+	return success ? 0 : -1;
+
+
+}
+
 
 /* Formats the file system. */
 static void

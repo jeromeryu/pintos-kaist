@@ -498,7 +498,7 @@ int inumber(int fd){
 }
 
 int symlink(const char *target, const char *linkpath){
-
+	return filesys_symlink(target, linkpath);
 }
 
 

@@ -74,7 +74,7 @@ inode_init (void) {
  * Returns true if successful.
  * Returns false if memory or disk allocation fails. */
 bool
-inode_create (disk_sector_t sector, off_t length) {
+inode_create (disk_sector_t sector, off_t length, int symlink) {
 #ifdef EFILESYS
 	struct inode_disk *disk_inode = NULL;
 	bool success = false;
@@ -104,6 +104,11 @@ inode_create (disk_sector_t sector, off_t length) {
 					return false;
 				}
 			}
+		}
+		if (symlink){
+			disk_inode->is_symlink = 1;
+		}else{
+			disk_inode->is_symlink = 0;
 		}
 
 		// printf("sector %d\n", sector);

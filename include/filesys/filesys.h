@@ -23,5 +23,6 @@ bool filesys_mkdir(char *name);
 bool filesys_readdir(struct dir* dir, char* name);
 bool filesys_isdir(struct dir *dir);
 int filesys_inumber(struct file *file);
+int filesys_symlink(const char *target, const char *linkpath);
 
 #endif /* filesys/filesys.h */
