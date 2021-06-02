@@ -234,7 +234,7 @@ inode_close (struct inode *inode) {
 			
 			// fat_remove_chain(inode->sector, 0);
 			// printf("remove chain\n", inode->sector);
-			fat_remove_chain(sector_to_cluster(inode->sector), 0);
+			fat_remove_chain(inode->sector, 0);
 			fat_remove_chain(inode->data.start, 0);
 		}
 		disk_write(filesys_disk, inode->sector, &inode->data);	
@@ -350,12 +350,14 @@ inode_write_at (struct inode *inode, const void *buffer_, off_t size,
 		while (sector_idx == -1){
 			inode->data.length = offset+size;
 			c = inode->data.start;
+			// printf("hey %d\n", c);
 			while ((fat_get(c) != EOChain) && (c != 0)){
 				c = fat_get(c);
 			}
 			c = fat_create_chain(c);
-			
+			// printf("c %d %d\n",inode->data.start, c);
 			if(c == 0){
+				// printf("chain is 0\n");
 				break;
 			}
 
@@ -435,5 +437,6 @@ inode_allow_write (struct inode *inode) {
 /* Returns the length, in bytes, of INODE's data. */
 off_t
 inode_length (const struct inode *inode) {
+	// printf("inode_length\n");
 	return inode->data.length;
 }

@@ -223,6 +223,10 @@ fat_create_chain (cluster_t clst) {
 	cluster_t free_cluster = fat_fs->data_start;
 	while(fat_get(free_cluster) != 0 && free_cluster <= fat_fs->last_clst ){
 		// printf("fat_get %d %d\n", free_cluster, fat_get(free_cluster));
+		// if(free_cluster%1000==0){
+		// 	printf("move forward %d %d\n",free_cluster, fat_get(free_cluster));
+
+		// }
 		free_cluster++;
 	}
 
@@ -270,7 +274,8 @@ fat_remove_chain (cluster_t clst, cluster_t pclst) {
 	cluster_t nclst = clst;
 	while(nclst != EOChain){
 		cluster_t tmp_clst = fat_get(nclst);
-		fat_put(nclst, EOChain);
+		// printf("put zero %d\n", nclst);
+		fat_put(nclst, 0);
 		nclst = tmp_clst;
 	}
 

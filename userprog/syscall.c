@@ -50,7 +50,7 @@ syscall_init (void) {
 	write_msr(MSR_SYSCALL_MASK,
 			FLAG_IF | FLAG_TF | FLAG_DF | FLAG_IOPL | FLAG_AC | FLAG_NT);
 
-	lock_init(&file_lock);
+	// lock_init(&syscall_lock);
 }
 
 void halt(){
@@ -196,27 +196,35 @@ int filesize(int fd){
 }
 
 int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
+	// lock_acquire(&file_lock);
+
 	if(fd<0 || fd >= NUM_MAX_FILE){
+		// lock_release(&file_lock);
 		return -1;
 	}
 
 	if(thread_current()->fd[fd] == (struct file*)1){
+		// lock_release(&file_lock);
 		return -1;
 	}
 
 	if((thread_current()->fd)[fd]==NULL){
+		// lock_release(&file_lock);
 		return -1;
 	}
 
 	if(buffer == NULL){
+		// lock_release(&file_lock);
 		exit(-1);
 	}
 
 	if (!(is_user_vaddr(buffer))){
+		// lock_release(&file_lock);
 		exit(-1);
 	}
 
 	if(!(pml4e_walk (thread_current()->pml4, buffer, 0))){
+		// lock_release(&file_lock);
 		exit(-1);
 	}
 
@@ -230,7 +238,7 @@ int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
 		// printf("%d\n", page==NULL);
 		if(page == NULL ){
 			// printf("write %p\n", pg_round_down(buffer));
-			
+			// lock_release(&file_lock);
 			exit(-1);
 		}
 	}
@@ -240,7 +248,9 @@ int write(uintptr_t user_rsp, int fd, const void* buffer, unsigned size){
 	int res; 
 
 	if(thread_current()->fd[fd] == (struct file*)2){
+		// lock_acquire(&syscall_lock);
 		putbuf(buffer, size);
+		// lock_release(&syscall_lock);
 	} else {
 		lock_acquire(&file_lock);
 		struct file *file = thread_current()->fd[fd];
@@ -332,7 +342,7 @@ unsigned tell (int fd){
 
 	int res;
 	lock_acquire(&file_lock);
-	res = file_tell((thread_current()->fd)[0]);
+	res = file_tell((thread_current()->fd)[fd]);
 	lock_release(&file_lock);
 	return res;
 }

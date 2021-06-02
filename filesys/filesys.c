@@ -155,12 +155,18 @@ filesys_create (const char *name, off_t initial_size) {
 	}
 	// printf("filesys_create4 %d %d\n", dir->inode->sector,dir->inode->open_cnt);	
 
-	bool success = (dir != NULL
-			&& inode_create (inode_sector, initial_size,0)
-			&& dir_add (dir, ret, inode_sector));
-	// bool success = (dir!=NULL) && ic && da;
+	bool ic = inode_create (inode_sector, initial_size,0);
+	bool da = dir_add (dir, ret, inode_sector);
+
+	// printf("%s %d %d %d\n", ret, dir!=NULL, ic, da );
+
+	bool success = (dir!=NULL) && ic && da;
+
+	// bool success = (dir != NULL
+	// 		&& inode_create (inode_sector, initial_size,0)
+	// 		&& dir_add (dir, ret, inode_sector));
 	
-	// printf("@@@@@@success %d\n", success);
+	// printf("success %s %d\n", ret, success);
 
 	if (!success && inode_sector != 0){
 		// printf("fail\n");
