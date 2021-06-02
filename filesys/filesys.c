@@ -35,6 +35,7 @@ filesys_init (bool format) {
 	fat_open ();
 
 	struct dir *dir = dir_open_root();
+	// printf("dir inode sector %d\n", dir->inode->sector);
 	dir_add(dir, ".", dir->inode->sector);
 	dir_add(dir, "..", dir->inode->sector);
 	dir_close(dir);
@@ -190,8 +191,7 @@ filesys_open (const char *name) {
 		// dir = dir_open(inode_open( cluster_to_sector( thread_current()->cwd_cluster)));
 		dir = dir_open(inode_open(  thread_current()->cur_sector));
 	}
-
-	// printf("filesys open ori dir %d %d\n", dir->inode->sector, dir->inode->open_cnt);
+	// printf("filesys_open %s\n", name);
 
 	char * next;
 	char *name_copy = malloc(strlen(name) + 1);
@@ -201,14 +201,18 @@ filesys_open (const char *name) {
 	char *ret = strtok_r(name_copy, "/", &next);
 	struct inode *i;
 	while(ret){
+		// printf("ret1\n");
 		ret_after = strtok_r(NULL, "/", &next);
 		if(ret_after == NULL){
+			// printf("break\n");
 			break;
 		}
+
 		if(!dir_lookup(dir, ret, &i)){
 			//no subdirectory
 			dir_close(dir);
 			free(name_copy);
+			// printf("null1\n");
 			return NULL;
 		}
 		disk_sector_t s = 0;
@@ -236,13 +240,15 @@ filesys_open (const char *name) {
 		free(name_copy);
 		return dir;
 	} else {
-		// printf("file open %s %d\n", ret, i->sector);
 		// printf("dir open %d %d %s\n", dir->inode->sector, dir->inode->open_cnt, ret);
 		disk_sector_t s = 0;
 		if (dir != NULL){
+
+			// printf("ret is %s\n", ret);
 			if(!dir_lookup (dir, ret, &i)){
 				dir_close(dir);
 				free(name_copy);
+				// printf("null2\n");
 				return NULL;
 			}
 			s = i->sector;
@@ -265,7 +271,6 @@ filesys_open (const char *name) {
 			return open_dir;
 		} else {
 			dir_close (dir);
-			// printf("open file2 %d %d\n", dir->inode->sector, dir->inode->open_cnt);
 			free(name_copy);
 			return file_open (i);
 		}

@@ -260,7 +260,6 @@ process_exec (void *f_name) {
 	process_cleanup ();
 	/* And then load the binary */
 	lock_acquire(&file_lock);
-	// printf("load %s\n", file_name);
 	success = load (file_name, &_if);
 	lock_release(&file_lock);
 	/* If load failed, quit. */
@@ -575,7 +574,6 @@ load (const char *file_name, struct intr_frame *if_) {
 					// printf("check %p\n", mem_page);
 					if (!load_segment (file, file_page, (void *) mem_page,
 								read_bytes, zero_bytes, writable, false)){
-						// printf("load segment fail\n");
 						goto done;
 
 					}

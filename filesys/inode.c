@@ -230,6 +230,7 @@ inode_close (struct inode *inode) {
 		if (inode->removed) {
 			
 			// fat_remove_chain(inode->sector, 0);
+			// printf("remove chain\n", inode->sector);
 			fat_remove_chain(sector_to_cluster(inode->sector), 0);
 			fat_remove_chain(inode->data.start, 0);
 		}
