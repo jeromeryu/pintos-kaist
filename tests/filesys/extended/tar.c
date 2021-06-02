@@ -69,7 +69,6 @@ make_tar_archive (const char *archive_name, char *files[], size_t file_cnt)
   for (i = 0; i < file_cnt; i++) 
     {
       char file_name[128];
-      
       strlcpy (file_name, files[i], sizeof file_name);
       if (!archive_file (file_name, sizeof file_name,
                          archive_fd, &write_error))
@@ -89,7 +88,12 @@ static bool
 archive_file (char file_name[], size_t file_name_size,
               int archive_fd, bool *write_error) 
 {
+  // printf("archive 0 \n");
+    // printf("value of b_static: %.*s\n", (int)sizeof(file_name), file_name);
+
   int file_fd = open (file_name);
+
+
   if (file_fd >= 0) 
     {
       bool success;
@@ -173,9 +177,11 @@ archive_directory (char file_name[], size_t file_name_size, int file_fd,
     return false;
       
   file_name[dir_len] = '/';
-  while (readdir (file_fd, &file_name[dir_len + 1])) 
+  while (readdir (file_fd, &file_name[dir_len + 1])) {
+    // printf("readdir\n");
     if (!archive_file (file_name, file_name_size, archive_fd, write_error))
       success = false;
+  }
   file_name[dir_len] = '\0';
 
   return success;
@@ -189,15 +195,15 @@ write_header (const char *file_name,
   static char header[512];
   unsigned chksum;
   size_t i;
-
   memset (header, 0, sizeof header);
-
   /* Drop confusing and possibly dangerous prefixes from
      FILE_NAME. */
+
   while (*file_name == '/'
          || !memcmp (file_name, "./", 2)
          || !memcmp (file_name, "../", 3))
     file_name = strchr (file_name, '/') + 1;
+  
   if (*file_name == '\0') 
     {
       /* Dropped *everything* from FILE_NAME.
@@ -228,7 +234,7 @@ write_header (const char *file_name,
   for (i = 0; i < 512; i++)
     chksum += (uint8_t) header[i];
   snprintf (header + 148, 8, "%07o", chksum);
-
+  
   /* Write header. */
   return do_write (archive_fd, header, 512, write_error);
 }

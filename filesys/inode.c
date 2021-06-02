@@ -205,6 +205,7 @@ struct inode *
 inode_reopen (struct inode *inode) {
 	if (inode != NULL)
 		inode->open_cnt++;
+	// printf("inode reopen %d %d\n", inode->sector, inode->open_cnt);
 	return inode;
 }
 
@@ -225,6 +226,8 @@ inode_close (struct inode *inode) {
 		return;
 	
 	disk_write(filesys_disk, inode->sector, &inode->data);
+
+	// printf("inode close %d %d\n", inode->sector, inode->open_cnt - 1);
 	if (--inode->open_cnt == 0) {
 		list_remove (&inode->elem);
 		if (inode->removed) {
