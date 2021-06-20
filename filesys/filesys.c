@@ -16,6 +16,150 @@ struct disk *filesys_disk;
 
 static void do_format (void);
 
+struct buffer_cache *buffer_cache;
+
+void
+buffer_cache_init(void) {
+	unsigned int t;
+	buffer_cache = calloc(1, sizeof(struct buffer_cache));
+	buffer_cache->buffer_cache_size = 64;
+	buffer_cache->buffer_array = (struct buffer_cache_entry *) calloc(buffer_cache->buffer_cache_size, sizeof(struct buffer_cache_entry));
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		buffer_cache->buffer_array[t].dirty_bit = 0;
+		buffer_cache->buffer_array[t].sector = -1;
+		buffer_cache->buffer_array[t].clock_bit = 0;
+		buffer_cache->buffer_array[t].buffer = calloc(1, DISK_SECTOR_SIZE);
+	}
+}
+
+void
+buffer_clock(void){
+	unsigned int t;
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		if (buffer_cache->buffer_array[t].sector != -1){
+			buffer_cache->buffer_array[t].clock_bit += 1;
+		}
+	}
+}
+
+void
+buffer_cache_read(disk_sector_t sector_idx, void *buffer) {
+	// printf("buffer_cache_read\n");
+	unsigned int t;
+	int bufferindex = -1;
+	int newwriteindex = -1;
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		struct buffer_cache_entry a = buffer_cache->buffer_array[t];
+		if (a.sector == sector_idx){
+			bufferindex = t;
+			break;
+		}
+	}
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		struct buffer_cache_entry a = buffer_cache->buffer_array[t];
+		if (a.sector == -1){
+			newwriteindex = t;
+			break;
+		}
+	}
+
+	if (bufferindex != -1){
+		memcpy(buffer, buffer_cache->buffer_array[bufferindex].buffer, DISK_SECTOR_SIZE);
+		buffer_clock();
+		buffer_cache->buffer_array[bufferindex].clock_bit = 0;
+		return;
+	}else{
+		if (newwriteindex == -1){
+			newwriteindex = buffer_cache_evict();
+		}
+		disk_read(filesys_disk, sector_idx, buffer_cache->buffer_array[newwriteindex].buffer);
+		buffer_clock();
+		buffer_cache->buffer_array[newwriteindex].clock_bit = 0;
+		buffer_cache->buffer_array[newwriteindex].sector = sector_idx;
+		buffer_cache->buffer_array[newwriteindex].dirty_bit = 0;
+		memcpy(buffer, buffer_cache->buffer_array[newwriteindex].buffer, DISK_SECTOR_SIZE);
+		return;
+	}
+
+}
+
+unsigned int
+buffer_cache_evict(void){
+	// printf("buffer_cache_evict\n");
+	unsigned int t;
+	int bufferindex = 0;
+	int max_clock = 0;
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		struct buffer_cache_entry a = buffer_cache->buffer_array[t];
+		if(a.clock_bit > max_clock){
+			max_clock = a.clock_bit;
+			bufferindex = t;
+		}
+		// printf("index: %d, clock: %d\n",t,a.clock_bit);
+	}
+
+	if (buffer_cache->buffer_array[bufferindex].dirty_bit != 0){
+		disk_write(filesys_disk, buffer_cache->buffer_array[bufferindex].sector, buffer_cache->buffer_array[bufferindex].buffer);
+	}
+	buffer_cache->buffer_array[bufferindex].sector = -1;
+	buffer_cache->buffer_array[bufferindex].dirty_bit = 0;
+	memset(buffer_cache->buffer_array[bufferindex].buffer, 0, DISK_SECTOR_SIZE);
+	buffer_cache->buffer_array[bufferindex].clock_bit = 0;
+	// printf("evict buffer index: %d\n", bufferindex);
+	return bufferindex;
+}
+
+bool
+buffer_cache_write(disk_sector_t sector_idx, void* buffer){
+	// printf("buffer_cache_write\n");
+	unsigned int t;
+	int bufferindex = -1;
+	int newwriteindex = -1;
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		struct buffer_cache_entry a = buffer_cache->buffer_array[t];
+		if (a.sector == sector_idx){
+			bufferindex = t;
+			break;
+		}
+	}
+	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+		struct buffer_cache_entry a = buffer_cache->buffer_array[t];
+		if (a.sector == -1){
+			newwriteindex = t;
+			break;
+		}
+	}
+
+	if(bufferindex != -1){
+		memcpy(buffer_cache->buffer_array[bufferindex].buffer, buffer, DISK_SECTOR_SIZE);
+		buffer_clock();
+		buffer_cache->buffer_array[bufferindex].dirty_bit = 1;
+		buffer_cache->buffer_array[bufferindex].clock_bit = 0;
+	}else{
+		if (newwriteindex == -1){
+			newwriteindex = buffer_cache_evict();
+		}
+		memcpy(buffer_cache->buffer_array[newwriteindex].buffer, buffer, DISK_SECTOR_SIZE);
+		buffer_clock();
+		buffer_cache->buffer_array[newwriteindex].sector = sector_idx;
+		buffer_cache->buffer_array[newwriteindex].dirty_bit = 1;
+		buffer_cache->buffer_array[newwriteindex].clock_bit = 0;
+	}
+}
+
+void
+buffer_cache_close(void) {
+	unsigned int t;
+	for (t=0;t < buffer_cache->buffer_cache_size; t++){
+		if (buffer_cache->buffer_array[t].dirty_bit){
+			disk_write(filesys_disk, buffer_cache->buffer_array[t].sector, buffer_cache->buffer_array[t].buffer);
+		}
+		free(buffer_cache->buffer_array[t].buffer);
+	}
+	free(buffer_cache->buffer_array);
+	free(buffer_cache);
+}
+
 /* Initializes the file system module.
  * If FORMAT is true, reformats the file system. */
 void
@@ -28,6 +172,7 @@ filesys_init (bool format) {
 
 #ifdef EFILESYS
 	fat_init ();
+	buffer_cache_init();
 
 	if (format)
 		do_format ();
@@ -59,6 +204,7 @@ filesys_done (void) {
 	/* Original FS */
 #ifdef EFILESYS
 	fat_close ();
+	buffer_cache_close();
 #else
 	free_map_close ();
 #endif

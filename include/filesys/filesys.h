@@ -10,9 +10,25 @@
 // #define ROOT_DIR_SECTOR 1       /* Root directory file inode sector. */
 #define ROOT_DIR_SECTOR 1       /* Root directory file inode sector. */
 
+struct buffer_cache_entry {
+    bool dirty_bit;
+    int clock_bit;
+    disk_sector_t sector;
+    uint8_t *buffer;
+};
+
+struct buffer_cache {
+    uint32_t buffer_cache_size;
+    struct buffer_cache_entry *buffer_array;
+};
+
+
 /* Disk used for file system. */
 extern struct disk *filesys_disk;
 
+void buffer_cache_read(disk_sector_t sector_idx, void *buffer);
+unsigned int buffer_cache_evict(void);
+bool buffer_cache_write(disk_sector_t sector_idx, void* buffer);
 void filesys_init (bool format);
 void filesys_done (void);
 bool filesys_create (const char *name, off_t initial_size);
