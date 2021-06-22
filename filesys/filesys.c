@@ -18,19 +18,56 @@ static void do_format (void);
 
 struct buffer_cache *buffer_cache;
 
+// unsigned int buffer_flush_count;
+
 void
 buffer_cache_init(void) {
 	unsigned int t;
 	buffer_cache = calloc(1, sizeof(struct buffer_cache));
 	buffer_cache->buffer_cache_size = 64;
 	buffer_cache->buffer_array = (struct buffer_cache_entry *) calloc(buffer_cache->buffer_cache_size, sizeof(struct buffer_cache_entry));
+	buffer_cache->lock = (struct lock *) calloc(1,sizeof(struct lock));
+	lock_init(buffer_cache->lock);
 	for(t=0; t < buffer_cache->buffer_cache_size; t++){
 		buffer_cache->buffer_array[t].dirty_bit = 0;
 		buffer_cache->buffer_array[t].sector = -1;
 		buffer_cache->buffer_array[t].clock_bit = 0;
 		buffer_cache->buffer_array[t].buffer = calloc(1, DISK_SECTOR_SIZE);
 	}
+	// buffer_flush_count = 0;
 }
+
+void
+buffer_cache_close(void) {
+	unsigned int t;
+	for (t=0;t < buffer_cache->buffer_cache_size; t++){
+		if (buffer_cache->buffer_array[t].dirty_bit){
+			disk_write(filesys_disk, buffer_cache->buffer_array[t].sector, buffer_cache->buffer_array[t].buffer);
+		}
+		free(buffer_cache->buffer_array[t].buffer);
+	}
+	free(buffer_cache->buffer_array);
+	free(buffer_cache);
+}
+
+// void
+// buffer_flush(void){
+// 	unsigned int t;
+// 	for (t=0;t < buffer_cache->buffer_cache_size; t++){
+// 		if (buffer_cache->buffer_array[t].dirty_bit){
+// 			disk_write(filesys_disk, buffer_cache->buffer_array[t].sector, buffer_cache->buffer_array[t].buffer);
+// 		}
+// 	}
+// 	for(t=0; t < buffer_cache->buffer_cache_size; t++){
+// 		buffer_cache->buffer_array[t].dirty_bit = 0;
+// 		buffer_cache->buffer_array[t].sector = -1;
+// 		buffer_cache->buffer_array[t].clock_bit = 0;
+// 		memset(buffer_cache->buffer_array[t].buffer, 0, DISK_SECTOR_SIZE);
+// 	}
+// 	buffer_flush_count = 0;
+// 	// buffer_cache_close();
+// 	// buffer_cache_init();
+// }
 
 void
 buffer_clock(void){
@@ -40,11 +77,21 @@ buffer_clock(void){
 			buffer_cache->buffer_array[t].clock_bit += 1;
 		}
 	}
+	// buffer_flush_count += 1;
 }
 
 void
 buffer_cache_read(disk_sector_t sector_idx, void *buffer) {
 	// printf("buffer_cache_read\n");
+	// if (buffer_flush_count >= 1000){
+	// 	// printf("flush\n");
+	// 	buffer_flush();
+	// }
+	// if (sector_idx == 2000){
+	// 	printf("thread %d read\n", thread_current()->tid);
+	// }
+	lock_acquire(buffer_cache->lock);
+	// printf("thread read :%d, sector num:%d\n", thread_current()->tid, sector_idx);
 	unsigned int t;
 	int bufferindex = -1;
 	int newwriteindex = -1;
@@ -67,7 +114,7 @@ buffer_cache_read(disk_sector_t sector_idx, void *buffer) {
 		memcpy(buffer, buffer_cache->buffer_array[bufferindex].buffer, DISK_SECTOR_SIZE);
 		buffer_clock();
 		buffer_cache->buffer_array[bufferindex].clock_bit = 0;
-		return;
+		// return;
 	}else{
 		if (newwriteindex == -1){
 			newwriteindex = buffer_cache_evict();
@@ -78,9 +125,10 @@ buffer_cache_read(disk_sector_t sector_idx, void *buffer) {
 		buffer_cache->buffer_array[newwriteindex].sector = sector_idx;
 		buffer_cache->buffer_array[newwriteindex].dirty_bit = 0;
 		memcpy(buffer, buffer_cache->buffer_array[newwriteindex].buffer, DISK_SECTOR_SIZE);
-		return;
+		// return;
 	}
-
+	// printf("thread read finish :%d, sector num:%d\n", thread_current()->tid, sector_idx);
+	lock_release(buffer_cache->lock);
 }
 
 unsigned int
@@ -97,6 +145,9 @@ buffer_cache_evict(void){
 		}
 		// printf("index: %d, clock: %d\n",t,a.clock_bit);
 	}
+	// if (buffer_cache->buffer_array[bufferindex].sector == 2000){
+	// 	printf("thread %d evict\n", thread_current()->tid);
+	// }
 
 	if (buffer_cache->buffer_array[bufferindex].dirty_bit != 0){
 		disk_write(filesys_disk, buffer_cache->buffer_array[bufferindex].sector, buffer_cache->buffer_array[bufferindex].buffer);
@@ -106,12 +157,18 @@ buffer_cache_evict(void){
 	memset(buffer_cache->buffer_array[bufferindex].buffer, 0, DISK_SECTOR_SIZE);
 	buffer_cache->buffer_array[bufferindex].clock_bit = 0;
 	// printf("evict buffer index: %d\n", bufferindex);
+	
 	return bufferindex;
 }
 
 bool
 buffer_cache_write(disk_sector_t sector_idx, void* buffer){
 	// printf("buffer_cache_write\n");
+	// if (sector_idx == 2000){
+	// 	printf("thread %d write\n", thread_current()->tid);
+	// }
+	// printf("thread write :%d, sector num: %d\n", thread_current()->tid, sector_idx);
+	lock_acquire(buffer_cache->lock);
 	unsigned int t;
 	int bufferindex = -1;
 	int newwriteindex = -1;
@@ -145,20 +202,10 @@ buffer_cache_write(disk_sector_t sector_idx, void* buffer){
 		buffer_cache->buffer_array[newwriteindex].dirty_bit = 1;
 		buffer_cache->buffer_array[newwriteindex].clock_bit = 0;
 	}
+	// printf("thread write finish :%d, sector num: %d\n", thread_current()->tid, sector_idx);
+	lock_release(buffer_cache->lock);
 }
 
-void
-buffer_cache_close(void) {
-	unsigned int t;
-	for (t=0;t < buffer_cache->buffer_cache_size; t++){
-		if (buffer_cache->buffer_array[t].dirty_bit){
-			disk_write(filesys_disk, buffer_cache->buffer_array[t].sector, buffer_cache->buffer_array[t].buffer);
-		}
-		free(buffer_cache->buffer_array[t].buffer);
-	}
-	free(buffer_cache->buffer_array);
-	free(buffer_cache);
-}
 
 /* Initializes the file system module.
  * If FORMAT is true, reformats the file system. */

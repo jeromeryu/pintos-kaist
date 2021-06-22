@@ -20,6 +20,7 @@ struct buffer_cache_entry {
 struct buffer_cache {
     uint32_t buffer_cache_size;
     struct buffer_cache_entry *buffer_array;
+    struct lock *lock;
 };
 
 
