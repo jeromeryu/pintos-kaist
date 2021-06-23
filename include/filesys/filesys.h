@@ -20,12 +20,16 @@ struct buffer_cache_entry {
 struct buffer_cache {
     uint32_t buffer_cache_size;
     struct buffer_cache_entry *buffer_array;
-    struct lock *lock;
+    //struct lock *lock;
 };
 
 
 /* Disk used for file system. */
 extern struct disk *filesys_disk;
+//struct lock *buffer_read_lock;
+//struct lock *buffer_write_lock;
+struct lock *buffer_lock;
+struct lock *buffer_evict_lock;
 
 void buffer_cache_read(disk_sector_t sector_idx, void *buffer);
 unsigned int buffer_cache_evict(void);
